@@ -1,0 +1,5 @@
+*.out
+2d_dataset_fixed_positions/
+__pycache__/
+2d_dataset_fixed_positions_1000/
+4_shapes_same_dataset_1000/
