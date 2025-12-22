@@ -9,17 +9,13 @@ device = "cuda" if torch.cuda.is_available() else "cpu"
 global _loaded_models
 if '_loaded_models' not in globals():
     _loaded_models = {}
-model_id = "Qwen/Qwen2.5-VL-7B-Instruct"
-#model_id = "llava-hf/llava-1.5-7b-hf"
+# model_id = "Qwen/Qwen2.5-VL-7B-Instruct"
+model_id = "llava-hf/llava-1.5-7b-hf"
 if model_id not in _loaded_models:
     print("Loading model and processor...")
     processor = AutoProcessor.from_pretrained(model_id)
-    if "Qwen" in model_id:
-        model = AutoModelForVision2Seq.from_pretrained(
-        model_id, torch_dtype=torch.float16).to(device)
-    else:
-        model = LlavaForConditionalGeneration.from_pretrained(
-            model_id, torch_dtype=torch.float16).to(device)
+    model = LlavaForConditionalGeneration.from_pretrained(
+    model_id, torch_dtype=torch.float16).to(device)
     _loaded_models[model_id] = (processor, model)
 else:
     print("Reusing cached model and processor.")
@@ -33,4 +29,5 @@ left_colour = plotter.get_left_shapes()[0].colour
 right_colour = plotter.get_right_shapes()[0].colour
 plotter.get_outputs(f"The figure is {left_colour}")
 
-plotter.plot_image_attention("qwen_test_attention_map.png")
+plotter.plot_image_attention("llava_test_attention_map.png")
+plotter.plot_bbox_on_attention_map("bbox_on_attention_map.png")

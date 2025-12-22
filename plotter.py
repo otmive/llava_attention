@@ -107,7 +107,7 @@ class Plotter:
         #print(len(inputs))
         self.inputs = inputs
 
-        self.outputs = self.model.generate(**inputs, max_new_tokens=20, do_sample=False, output_attentions=True, return_dict_in_generate=True)
+        self.outputs = self.model.generate(**inputs, max_new_tokens=1, do_sample=False, output_attentions=True, return_dict_in_generate=True)
         
         return self.outputs
     
@@ -163,9 +163,9 @@ class Plotter:
         output_token_len = len(self.outputs.sequences[0]) - len(self.inputs["input_ids"][0])
         input_token_len = len(self.inputs["input_ids"][0])
         total_token_len = input_token_len + output_token_len
-        print("Input token length:", input_token_len)
-        print("Output token length:", output_token_len)
-        print("Total token length:", total_token_len)
+        # print("Input token length:", input_token_len)
+        # print("Output token length:", output_token_len)
+        # print("Total token length:", total_token_len)
         # create final attention matrix with padded zeros
         return heterogenous_stack(
         [torch.tensor([1])]
@@ -209,12 +209,12 @@ class Plotter:
         output_token_len = len(self.outputs.sequences[0]) - len(self.inputs["input_ids"][0])
         input_token_len = len(self.inputs["input_ids"][0])
         total_token_len = input_token_len + output_token_len
-        print("Input token length:", input_token_len)
-        print("Output token length:", output_token_len)
-        print("Total token length:", total_token_len)
+        # print("Input token length:", input_token_len)
+        # print("Output token length:", output_token_len)
+        # print("Total token length:", total_token_len)
         # print input tokens
         tokens = [self.processor.tokenizer.decode(i) for i in self.outputs.sequences[0]]
-        print("Tokens:", tokens)
+        #print("Tokens:", tokens)
         return heterogenous_stack(
             [torch.tensor([1])]  # Start with a dummy token
             + list(input_attentions)  # Add input attention
@@ -227,7 +227,7 @@ class Plotter:
         else:
             matrix = self.get_matrix_for_layer(layer_idx)
 
-        print("Attention matrix shape:", matrix.shape)
+        #print("Attention matrix shape:", matrix.shape)
 
         input_token_len = len(self.inputs["input_ids"][0])
         output_token_len = len(self.outputs.sequences[0]) - input_token_len
@@ -255,7 +255,7 @@ class Plotter:
         import numpy as np
 
         attn_matrix = self.get_image_attention_matrix(layer_idx)
-        print("Attention to image matrix shape:", attn_matrix.shape)
+        #print("Attention to image matrix shape:", attn_matrix.shape)
 
         # reset plot
         plt.clf()
@@ -264,6 +264,44 @@ class Plotter:
         plt.title(f'Image Attention Map (Layer {layer_idx if layer_idx is not None else "All Layers"})')
         plt.axis('off')
         plt.savefig(save_path)
+
+
+    def plot_bbox_on_attention_map(self, save_path, layer_idx=None):
+        import matplotlib.patches as patches
+        import numpy as np
+        import torch.nn.functional as F
+
+        fig = plt.figure()
+        attn_matrix = self.get_image_attention_matrix(layer_idx)
+        
+        attn_mask = np.zeros_like(attn_matrix)
+        for shape in self.shapes:
+            x1, y1, x2, y2 = shape.bbox
+            # scale bounding box to attention heatmap size
+            scale = attn_matrix.shape[0] / 177
+            bbox_heatmap = [x1 * scale, y1 * scale, x2 * scale, y2 * scale]
+            x1, y1, x2, y2 = bbox_heatmap
+
+            x1, y1, x2, y2 = int(x1), int(y1), int(x2), int(y2)
+
+            # set attn_mask values within bbox to 1
+            attn_mask[y1:y2+1, x1:x2+1] = 1.0
+
+        img = Image.open(self.image).convert("RGB")
+        img_numpy = np.array(img) / 255.0
+        # print("Image shape:", img_numpy.shape)
+        # print("Attention mask shape:", attn_mask.shape)
+        fig, ax = plt.subplots(figsize=(6, 6))
+        ax.imshow(img_numpy)
+        attn_mask_resized = F.interpolate(
+            torch.tensor(attn_mask).unsqueeze(0).unsqueeze(0),
+            size=img.size[::-1],  # PIL uses (W, H), PyTorch uses (H, W)
+            mode='bicubic',
+            align_corners=False
+        ).squeeze().numpy()
+        ax.imshow(attn_mask_resized, cmap='viridis', alpha=0.7  )
+        plt.savefig(save_path, bbox_inches='tight')
+        plt.close(fig)
 
     def plot_image_attention_all_layers(self, save_path_prefix):
         num_layers = len(self.outputs["attentions"][0])  # Get number of layers
@@ -285,7 +323,7 @@ class Plotter:
         # calculate number of tokens in the bounding box
 
         bbox_tokens = (x2 - x1 + 1) * (y2 - y1 + 1)
-        print("number tokens in bbox", bbox_tokens)
+        #print("number tokens in bbox", bbox_tokens)
         # plot attention heatmap but only for values within the bounding box
         return attn[y1:y2+1, x1:x2+1].sum().item()/bbox_tokens
         
@@ -321,7 +359,7 @@ class Plotter:
             # Plot attention for each colour through layers
             plt.figure(figsize=(10, 6))
             for colour, bbox_attn in bbox_attentions.items():
-                plt.plot(layers, bbox_attn, label=f"{colour.capitalize()} Bbox", marker='o', color=colour if colour != 'yellow' else 'gold')
+                plt.plot(layers, bbox_attn, label=f"{colour.capitalize()} Shape", marker='o', color=colour if colour != 'yellow' else 'gold')
             plt.plot(baseline_attn, label="Baseline Attention", linestyle='--', color='grey')
             plt.xlabel("Layer")
             plt.ylabel("Attention to Bounding Box")
@@ -329,6 +367,7 @@ class Plotter:
             plt.legend()
             plt.tight_layout()
             plt.savefig(save_path)
+            plt.close()
 
         return bbox_attentions, baseline_attn
     
