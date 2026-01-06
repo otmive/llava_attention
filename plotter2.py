@@ -259,9 +259,6 @@ class Plotter:
         else:
             matrix = self.get_matrix_for_layer(layer_idx)
 
-
-        print("full matrix element:")
-        print(matrix[53][51])
         #print("Attention matrix shape:", matrix.shape)
         # plot matrix
         figure = plt.figure(figsize=(8, 8))

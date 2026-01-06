@@ -1,8 +1,8 @@
 #!/bin/bash
 #SBATCH --job-name=2_shape
-#SBATCH --time=8:00:00
+#SBATCH --time=48:00:00
 #SBATCH --mem=32G 
 #SBATCH --partition=gpu
 #SBATCH --gres=gpu:1
 
-python four_shapes.py
+python gen_2_object_graphs.py

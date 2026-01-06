@@ -5,7 +5,7 @@ import torch
 from transformers import AutoProcessor, LlavaForConditionalGeneration, InternVLForConditionalGeneration
 
 
-def four_position(pos, colour):
+def four_position(pos, colour=None):
     # device = "cuda" if torch.cuda.is_available() else "cpu"
     # global _loaded_models
     # if '_loaded_models' not in globals():
@@ -38,11 +38,11 @@ def four_position(pos, colour):
         print("Reusing cached model and processor.")
         processor, model = _loaded_models[model_id]
 
-
+    count = 0
     item1_attn = []
     item2_attn = []
     baseline_attentions = []
-    for i in range(1000):
+    for i in range(100):
         image_path = f"2d_dataset_fixed_positions_1000/images/image_{i:04d}.png"
         plotter = Plotter(image_path)
         left_colour = plotter.get_left_shapes()[0].colour
@@ -54,7 +54,7 @@ def four_position(pos, colour):
         elif pos == 'right' or pos == 'neg_right':
             target_colour = right_colour
 
-        if target_colour == colour:
+        if target_colour == colour or colour is None:
 
             if pos == 'left':
                 plotter.get_outputs(f"The figure is {left_colour}")
@@ -70,6 +70,7 @@ def four_position(pos, colour):
             item1_attn.append(bbox_attentions[left_colour])
             item2_attn.append(bbox_attentions[right_colour])
             baseline_attentions.append(baseline_attn)
+            count += 1
 
 
     # plot average attention across items
@@ -80,8 +81,8 @@ def four_position(pos, colour):
     std_item2_attn = np.std(np.array(item2_attn), axis=0)
     layers = list(range(36))
     plt.figure(figsize=(10, 6))
-    plt.plot(layers, avg_item1_attn, label='Left Shape Attention', color='blue')
-    plt.plot(layers, avg_item2_attn, label='Right Shape Attention', color='red')
+    plt.plot(layers, avg_item1_attn, label='Left Shape Attention')
+    plt.plot(layers, avg_item2_attn, label='Right Shape Attention')
     plt.plot(layers, avg_baseline_attn, label='Baseline Attention', color='gray', linestyle='--')
     # plot confidence intervals
     #plt.fill_between(layers, avg_item1_attn - std_item1_attn, avg_item1_attn + std_item1_attn, color='blue', alpha=0.2)
@@ -91,8 +92,9 @@ def four_position(pos, colour):
     plt.title('Average Attention Scores Through Layers')
     plt.legend()
     # fix y axis limit
-    plt.ylim(0, 0.04)
-    plt.savefig(f'intern_colour_plots/{pos}_{colour}all.png')
+    plt.ylim(0, 0.03)
+    plt.savefig(f'intern_plots/{pos}_{colour if colour else ""}_all.png')
+    print(f"Processed {count} images matching criteria.")
 
     # image_path = "4_shapes_same_dataset_1000/images/image_0000.png"
 
@@ -190,10 +192,14 @@ if __name__ == "__main__":
 #     four_position('bottom_left')
 #     four_position('bottom_right')
     #four_position('left', 'green')
-    four_position('left', 'red')
-    four_position('left', 'blue')
-    four_position('left', 'yellow')
-    four_position('right', 'green')
-    four_position('right', 'red')
-    four_position('right', 'blue')
-    four_position('right', 'yellow')
+    # four_position('left', 'red')
+    # four_position('left', 'blue')
+    # four_position('left', 'yellow')
+    # four_position('right', 'green')
+    # four_position('right', 'red')
+    # four_position('right', 'blue')
+    # four_position('right', 'yellow')
+    four_position('left')
+    four_position('right')
+    four_position('neg_left')
+    four_position('neg_right')
