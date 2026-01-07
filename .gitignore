@@ -5,3 +5,5 @@ __pycache__/
 4_shapes_same_dataset_1000/
 SimSun.ttf
 whatsup/
+*.zip
+*.tar.gz
