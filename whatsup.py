@@ -1,8 +1,6 @@
-from plotter import Plotter
-import numpy as np
-import matplotlib.pyplot as plt
-import torch
-from transformers import AutoProcessor, LlavaForConditionalGeneration, InternVLForConditionalGeneration
+import json
+from plotter2 import Plotter
+from PIL import Image
 
 def load_model(model_name):
 
@@ -37,14 +35,23 @@ def load_model(model_name):
 
     return processor, model
 
+with open('whatsup/controlled_images/detections.json', 'r') as file:
+    data = json.load(file)
 
-processor, model = load_model("internvl")
-image_path = "2d_dataset_fixed_positions_1000/images/image_0004.png"
-plotter = Plotter(image_path)
-left_colour = plotter.get_left_shapes()[0].colour
-right_colour = plotter.get_right_shapes()[0].colour
-plotter.set_model(model, processor)
-plotter.get_outputs(f"The figure is not {left_colour}")
-print("outputs:", plotter.print_output())
-plotter.plot_attention_through_layers(save_path=f'test_llava_0004_new.png')
+# print out first 5 entries
+for img_path, detections in list(data.items())[0]:
+    print(f"Image Path: {img_path}")
+    #print(f"Detections: {detections}")
+    for det in detections:
+        print(det['name'], det['bbox'])
 
+    processor, model = load_model("llava")
+    full_img_path = f"whatsup/controlled_images/{img_path}"
+    plotter = Plotter(full_img_path)
+    plotter.set_model(model, processor)
+    left_shape = plotter.get_left_shapes()
+    
+    # print size of image
+    image = Image.open(full_img_path)
+    width, height = image.size
+    print(f"Image size: {width}x{height}")

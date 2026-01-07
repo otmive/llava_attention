@@ -52,6 +52,7 @@ class Plotter:
                     shapes.append(self.Shape(colour, shape, [x1, y2, x2, y1], position))
 
             self.shapes = shapes
+        self.device = "cuda" if torch.cuda.is_available() else "cpu"
 
     class Shape:
         def __init__(self, colour, shape, bbox, position):
@@ -81,10 +82,17 @@ class Plotter:
     #     self.processor = processor
 
     def set_model(self, model, processor):
-        self.model = model
+        self.model = model.to(self.device)
         self.processor = processor
+        model.config.output_attentions = True
+        if hasattr(self.model, "text_model"):
+            self.model.text_model.config.output_attentions = True
+        if hasattr(self.model, "vision_model"):
+            self.model.vision_model.config.output_attentions = True
+
 
     def get_outputs(self, prompt):
+        print("in get outputs")
         image = Image.open(self.image).convert("RGB")
         self.prompt = prompt
 
@@ -97,17 +105,46 @@ class Plotter:
                 ],
             },
         ]
-        prompt = self.processor.apply_chat_template(conversation, add_generation_prompt=True)
+
+        # check if model is internvl or llava
+        print("checking which model")
+        if "InternVL" in self.model.config._name_or_path:
+            print("using internvl processing")
+                
+            inputs = self.processor(
+                images=image,
+                text=f"<IMG_CONTEXT>\n {self.prompt}",
+                # truncation="only_second",
+                padding=True,
+                return_tensors='pt'
+            ).to(self.device, torch.float16)
+            self.inputs = {k: v.to(self.device) for k, v in inputs.items()}
+            input_ids = self.inputs["input_ids"].to(self.device)
+            for k, v in inputs.items():
+                if torch.is_tensor(v):
+                    print(k, v.device)
+            self.inputs["pixel_values"] = self.inputs["pixel_values"].to(self.device)
+    
+        elif "llava" in self.model.config._name_or_path:
+
+            print("using llava processing")
+
+            prompt = self.processor.apply_chat_template(conversation, add_generation_prompt=True)
+            
+            # Process the image
+            processed = self.processor(images=image, text="", return_tensors="pt")
+            #print("Processed pixel_values shape:", processed["pixel_values"].shape)
+
+            inputs = self.processor(images=image, text=prompt, return_tensors='pt').to(self.device, torch.float16)
+            #print(len(inputs))
+            self.inputs = inputs
+
+
         
-        # Process the image
-        processed = self.processor(images=image, text="", return_tensors="pt")
-        #print("Processed pixel_values shape:", processed["pixel_values"].shape)
+        # print model device
+        print("Model device:", next(self.model.parameters()).device)
 
-        inputs = self.processor(images=image, text=prompt, return_tensors='pt').to(0, torch.float16)
-        #print(len(inputs))
-        self.inputs = inputs
-
-        self.outputs = self.model.generate(**inputs, max_new_tokens=1, do_sample=False, output_attentions=True, return_dict_in_generate=True)
+        self.outputs = self.model.generate(**self.inputs, max_new_tokens=1, do_sample=False, output_attentions=True, return_dict_in_generate=True)
         
         return self.outputs
     
@@ -233,10 +270,10 @@ class Plotter:
         output_token_len = len(self.outputs.sequences[0]) - input_token_len
         tokens = [self.processor.tokenizer.decode(i) for i in self.outputs.sequences[0]]
         # if moel is llava image tok is <image> or if qwen image_tok is <|image_pad|>
-        if "Qwen" in self.model.config._name_or_path:
-            image_tok = '<|image_pad|>'
-        else:
+        if "llava" in self.model.config._name_or_path:
             image_tok = '<image>'
+        else:
+            image_tok = '<IMG_CONTEXT>' # for internvl
         # get attention from output to image tokens
         output_indices = list(range(len(tokens) - output_token_len, len(tokens)))
         image_indices = [i for i, token in enumerate(tokens) if token == image_tok]
@@ -346,16 +383,18 @@ class Plotter:
         baseline_attn = (total_attn - bbox_attn) / (attn.size - total_bbox_tokens)
         return baseline_attn
 
-    def plot_attention_through_layers(self, save_path=None):
+    def plot_attention_through_layers(self, save_path=None, ylimit=None):
+        num_layers = len(self.outputs["attentions"][0])
         # read json 
         bbox_attentions = {shape.colour: [] for shape in self.shapes}
         for shape in self.shapes:
-            bbox_attentions[shape.colour] = [self.get_bbox_attention_for_layer(shape, i) for i in range(32)]
+            bbox_attentions[shape.colour] = [self.get_bbox_attention_for_layer(shape, i) for i in range(num_layers)]
 
-        baseline_attn = [self.get_baseline_attn_for_layer(self.shapes, i) for i in range(32)]
+        baseline_attn = [self.get_baseline_attn_for_layer(self.shapes, i) for i in range(num_layers)]
 
         if save_path is not None:
-            layers = list(range(32))
+            num_layers = len(self.outputs["attentions"][0])
+            layers = list(range(num_layers))
             # Plot attention for each colour through layers
             plt.figure(figsize=(10, 6))
             for colour, bbox_attn in bbox_attentions.items():
@@ -364,6 +403,8 @@ class Plotter:
             plt.xlabel("Layer")
             plt.ylabel("Attention to Bounding Box")
             plt.title("Attention to Bounding Box Across Layers")
+            if ylimit is not None:
+                plt.ylim(ylimit)    
             plt.legend()
             plt.tight_layout()
             plt.savefig(save_path)

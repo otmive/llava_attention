@@ -19,19 +19,19 @@ class Plotter:
         self.image = image
         #self.load_model()
         img_path = Path(self.image)
-        self.labels_path = img_path.parent.parent / "labels.json"
+        print("img path: ", img_path)
+        self.labels_path = img_path.parent.parent / "detections.json"
         W = 177
         with open(self.labels_path, 'r') as f:
             data = json.load(f)
 
         image_name = os.path.basename(img_path)
         shapes = []
-        for item in data:
-            if item['filename'] == image_name:
-                for pair in item['shape_color_pairs']:
-                    colour = pair['color']
-                    shape = pair['shape']
-                    bbox = pair['bbox']
+        for img_path, detections in data:
+            if img_path == image_name:
+                for item in detections:
+                    shape = item['name']
+                    bbox = item['bbox']  # [x1, y1, x2, y2]
                     
                     orig_W, orig_H = 256, 256
 
@@ -92,65 +92,70 @@ class Plotter:
 
 
     def get_outputs(self, prompt):
+        print("in get outputs")
         image = Image.open(self.image).convert("RGB")
         self.prompt = prompt
 
+        conversation = [
+            {
+                "role": "user",
+                "content": [
+                    {"type": "text", "text": self.prompt},
+                    {"type": "image"},
+                ],
+            },
+        ]
 
-        inputs = self.processor(
-            images=image,
-            text=f"<IMG_CONTEXT>\n {self.prompt}",
-            # truncation="only_second",
-            padding=True,
-            return_tensors='pt'
-        )
-        self.inputs = {k: v.to(self.device) for k, v in inputs.items()}
-        input_ids = self.inputs["input_ids"].to(self.device)
-        # attention_mask = self.inputs["attention_mask"].to(self.device)
-        # pixel_values = self.inputs["pixel_values"].to(self.device, dtype=torch.bfloat16)
-        # self.inputs["pixel_values"] = pixel_values
-        # with torch.no_grad():
-        #     self.outputs = self.model(
-        #         pixel_values=pixel_values,
-        #         input_ids=input_ids,
-        #         attention_mask=attention_mask,
-        #         output_attentions=True,
-        #         attn_implementation="eager",
-        #         return_dict=True
-        #     )
+        # check if model is internvl or llava
+        print("checking which model")
+        if "InternVL" in self.model.config._name_or_path:
+            print("using internvl processing")
+                
+            inputs = self.processor(
+                images=image,
+                text=f"<IMG_CONTEXT>\n {self.prompt}",
+                # truncation="only_second",
+                padding=True,
+                return_tensors='pt'
+            ).to(self.device, torch.float16)
+            self.inputs = {k: v.to(self.device) for k, v in inputs.items()}
+            input_ids = self.inputs["input_ids"].to(self.device)
+            for k, v in inputs.items():
+                if torch.is_tensor(v):
+                    print(k, v.device)
+            self.inputs["pixel_values"] = self.inputs["pixel_values"].to(self.device)
+    
+        elif "llava" in self.model.config._name_or_path:
 
-        # messages = [
-        #     {
-        #         "role": "user",
-        #         "content": [
-        #             {"type": "image", "url": self.image},
-        #             {"type": "text", "text": self.prompt}
-        #         ]
-        #     },
-        # ]
-        # self.inputs = self.processor.apply_chat_template(
-        #     messages,
-        #     add_generation_prompt=True,
-        #     tokenize=True,
-        #     return_dict=True,
-        #     return_tensors="pt",
-        # ).to(self.model.device)
+            print("using llava processing")
+
+            prompt = self.processor.apply_chat_template(conversation, add_generation_prompt=True)
+            
+            # Process the image
+            processed = self.processor(images=image, text="", return_tensors="pt")
+            #print("Processed pixel_values shape:", processed["pixel_values"].shape)
+
+            inputs = self.processor(images=image, text=prompt, return_tensors='pt').to(self.device, torch.float16)
+            #print(len(inputs))
+            self.inputs = inputs
+
+
         
-        self.inputs["pixel_values"] = self.inputs["pixel_values"].to(self.device, dtype=torch.float16)
+        # print model device
+        print("Model device:", next(self.model.parameters()).device)
 
         self.outputs = self.model.generate(**self.inputs, max_new_tokens=1, do_sample=False, output_attentions=True, return_dict_in_generate=True)
-
         
         return self.outputs
     
     def print_output(self):
-        input_len = self.inputs["input_ids"].shape[1]
-        generated_text = self.processor.decode(self.outputs.sequences[0, input_len :], skip_special_tokens=True)
-        # print all generated tokens
+        generated_text = self.processor.batch_decode(self.outputs.sequences, skip_special_tokens=True)[0]
+        #print(generated_text)
         return generated_text
 
     def get_matrix_all_layers(self):
         num_layers = len(self.outputs["attentions"][0])  # Get number of layers
-        #print("Number of layers:", num_layers)
+
         aggregated_attn_all_layers_heads = []
         for l in range(num_layers):
             layer_attns = self.outputs["attentions"][0][l].squeeze(0)
@@ -260,21 +265,10 @@ class Plotter:
             matrix = self.get_matrix_for_layer(layer_idx)
 
         #print("Attention matrix shape:", matrix.shape)
-        # plot matrix
-        figure = plt.figure(figsize=(8, 8))
-        plt.imshow(matrix.cpu().numpy(), cmap='viridis')
-        plt.colorbar()
-        plt.title(f'Attention Matrix (Layer {layer_idx if layer_idx is not None else "All Layers"})')
-        plt.xlabel('Key Tokens')
-        plt.ylabel('Query Tokens')
-        plt.savefig('attention_matrix.png')
+
         input_token_len = len(self.inputs["input_ids"][0])
-        #print("Input token length:", input_token_len)
         output_token_len = len(self.outputs.sequences[0]) - input_token_len
-        #print("Output token length:", output_token_len)
         tokens = [self.processor.tokenizer.decode(i) for i in self.outputs.sequences[0]]
-        # print("Tokens:", tokens)
-        # print("length tokens:", len(tokens))
         # if moel is llava image tok is <image> or if qwen image_tok is <|image_pad|>
         if "llava" in self.model.config._name_or_path:
             image_tok = '<image>'
@@ -283,9 +277,7 @@ class Plotter:
         # get attention from output to image tokens
         output_indices = list(range(len(tokens) - output_token_len, len(tokens)))
         image_indices = [i for i, token in enumerate(tokens) if token == image_tok]
-        # print("len(image_indices): ", len(image_indices))
-        # print("output indices:", output_indices)
-        # print("image indices:", image_indices)
+
         attn_out_to_image = matrix[output_indices][:,image_indices]
 
         # average over all output tokens
@@ -300,23 +292,16 @@ class Plotter:
         import numpy as np
 
         attn_matrix = self.get_image_attention_matrix(layer_idx)
-        # print("Attention to image matrix shape:", attn_matrix.shape)
-        #print("min and max of attn matrix:", attn_matrix.min(), attn_matrix.max())
-        # # reset plot
+        #print("Attention to image matrix shape:", attn_matrix.shape)
+
+        # reset plot
         plt.clf()
-        gmin = 0
-        gmax = 0.5
         plt.imshow(attn_matrix, cmap='viridis')
         plt.colorbar()
         plt.title(f'Image Attention Map (Layer {layer_idx if layer_idx is not None else "All Layers"})')
         plt.axis('off')
         plt.savefig(save_path)
 
-    def plot_image_attention_all_layers(self, save_path_prefix):
-        num_layers = len(self.outputs["attentions"][0])  # Get number of layers
-        for layer_idx in range(num_layers):
-            save_path = f"{save_path_prefix}_layer_{layer_idx}.png"
-            self.plot_image_attention(save_path, layer_idx=layer_idx)
 
     def plot_bbox_on_attention_map(self, save_path, layer_idx=None):
         import matplotlib.patches as patches
@@ -355,6 +340,12 @@ class Plotter:
         plt.savefig(save_path, bbox_inches='tight')
         plt.close(fig)
 
+    def plot_image_attention_all_layers(self, save_path_prefix):
+        num_layers = len(self.outputs["attentions"][0])  # Get number of layers
+        for layer_idx in range(num_layers):
+            save_path = f"{save_path_prefix}_layer_{layer_idx}.png"
+            self.plot_image_attention(save_path, layer_idx=layer_idx)
+
     def get_bbox_attention_for_layer(self, shape, layer_idx):
 
         attn = self.get_image_attention_matrix(layer_idx)
@@ -372,8 +363,8 @@ class Plotter:
         #print("number tokens in bbox", bbox_tokens)
         # plot attention heatmap but only for values within the bounding box
         return attn[y1:y2+1, x1:x2+1].sum().item()/bbox_tokens
-            
-    def get_baseline_attn_for_layer(self, shapes, layer_idx, no_token=False):
+        
+    def get_baseline_attn_for_layer(self, shapes, layer_idx):
         attn = self.get_image_attention_matrix(layer_idx)
         total_attn = attn.sum().item()
         bbox_attn = 0.0
@@ -390,14 +381,10 @@ class Plotter:
             bbox_attn += attn[y1:y2+1, x1:x2+1].sum().item()
         
         baseline_attn = (total_attn - bbox_attn) / (attn.size - total_bbox_tokens)
+        return baseline_attn
 
-        if no_token:
-            return total_attn - bbox_attn
-        else:
-            return baseline_attn
-
-    def plot_attention_through_layers(self, save_path=None):
-        num_layers = len(self.outputs["attentions"][0])  # Get number of layers
+    def plot_attention_through_layers(self, save_path=None, ylimit=None):
+        num_layers = len(self.outputs["attentions"][0])
         # read json 
         bbox_attentions = {shape.colour: [] for shape in self.shapes}
         for shape in self.shapes:
@@ -406,40 +393,24 @@ class Plotter:
         baseline_attn = [self.get_baseline_attn_for_layer(self.shapes, i) for i in range(num_layers)]
 
         if save_path is not None:
-            num_layers = len(self.outputs["attentions"][0])  # Get number of layers
+            num_layers = len(self.outputs["attentions"][0])
             layers = list(range(num_layers))
             # Plot attention for each colour through layers
             plt.figure(figsize=(10, 6))
             for colour, bbox_attn in bbox_attentions.items():
-                plt.plot(layers, bbox_attn, label=f"{colour.capitalize()} Bbox", marker='o', color=colour if colour != 'yellow' else 'gold')
+                plt.plot(layers, bbox_attn, label=f"{colour.capitalize()} Shape", marker='o', color=colour if colour != 'yellow' else 'gold')
             plt.plot(baseline_attn, label="Baseline Attention", linestyle='--', color='grey')
             plt.xlabel("Layer")
             plt.ylabel("Attention to Bounding Box")
             plt.title("Attention to Bounding Box Across Layers")
-            plt.ylim(0, 0.007)
+            if ylimit is not None:
+                plt.ylim(ylimit)    
             plt.legend()
             plt.tight_layout()
             plt.savefig(save_path)
+            plt.close()
 
         return bbox_attentions, baseline_attn
-    
-    def plot_total_attention_to_image(self, save_path):
-        num_layers = len(self.outputs["attentions"][0])  # Get number of layers
-        total_attentions = []
-        for layer_idx in range(num_layers):
-            attn_matrix = self.get_image_attention_matrix(layer_idx)
-            total_attentions.append(attn_matrix.sum().item())
-        
-        # Plot total attention to image through layers
-        plt.figure(figsize=(10, 6))
-        plt.plot(list(range(num_layers)), total_attentions, label="Total Attention to Image", marker='o', color='blue')
-        plt.xlabel("Layer")
-        plt.ylabel("Total Attention to Image")
-        plt.title("Total Attention to Image Across Layers")
-        plt.legend()
-        plt.tight_layout()
-        plt.savefig(save_path)
-        plt.close()
     
     def get_left_shapes(self):
         return [shape for shape in self.shapes if 'left' in shape.position]
