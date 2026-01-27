@@ -33,6 +33,7 @@ class Plotter:
                     shape = pair['shape']
                     bbox = pair['bbox']
                     
+                    # initial size of 2d images when generated
                     orig_W, orig_H = 256, 256
 
                     scale_x = W / orig_W
@@ -139,6 +140,12 @@ class Plotter:
             #print(len(inputs))
             self.inputs = inputs
 
+        elif "paligemma" in self.model.config._name_or_path:
+            print("using paligemma processing")
+
+
+            self.inputs = self.processor(text=prompt, images=image, return_tensors="pt").to(torch.bfloat16).to(self.device)
+        
 
         
         # print model device
@@ -272,12 +279,14 @@ class Plotter:
         # if moel is llava image tok is <image> or if qwen image_tok is <|image_pad|>
         if "llava" in self.model.config._name_or_path:
             image_tok = '<image>'
-        else:
+        elif "InternVL" in self.model.config._name_or_path:
             image_tok = '<IMG_CONTEXT>' # for internvl
+        elif "paligemma" in self.model.config._name_or_path:
+            image_tok = '<image>'
         # get attention from output to image tokens
         output_indices = list(range(len(tokens) - output_token_len, len(tokens)))
         image_indices = [i for i, token in enumerate(tokens) if token == image_tok]
-
+        print("No. of image tokens:", len(image_indices))
         attn_out_to_image = matrix[output_indices][:,image_indices]
 
         # average over all output tokens
@@ -311,12 +320,19 @@ class Plotter:
         fig = plt.figure()
         attn_matrix = self.get_image_attention_matrix(layer_idx)
         
+        img = Image.open(self.image).convert("RGB")
+
         attn_mask = np.zeros_like(attn_matrix)
         for shape in self.shapes:
             x1, y1, x2, y2 = shape.bbox
             # scale bounding box to attention heatmap size
-            scale = attn_matrix.shape[0] / 177
-            bbox_heatmap = [x1 * scale, y1 * scale, x2 * scale, y2 * scale]
+            #scale = attn_matrix.shape[0] / 177
+
+            # set scale based on image size 1280x960
+            scale_x = attn_matrix.shape[1] / img.size[0]
+            scale_y = attn_matrix.shape[0] / img.size[1]
+
+            bbox_heatmap = [x1 * scale_x, y1 * scale_y, x2 * scale_x, y2 * scale_y]
             x1, y1, x2, y2 = bbox_heatmap
 
             x1, y1, x2, y2 = int(x1), int(y1), int(x2), int(y2)
@@ -324,7 +340,7 @@ class Plotter:
             # set attn_mask values within bbox to 1
             attn_mask[y1:y2+1, x1:x2+1] = 1.0
 
-        img = Image.open(self.image).convert("RGB")
+        
         img_numpy = np.array(img) / 255.0
         # print("Image shape:", img_numpy.shape)
         # print("Attention mask shape:", attn_mask.shape)

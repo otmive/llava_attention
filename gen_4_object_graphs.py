@@ -1,8 +1,9 @@
-from plotter2 import Plotter
+from plotter import Plotter
 import numpy as np
 import matplotlib.pyplot as plt
 import torch
-from transformers import AutoProcessor, LlavaForConditionalGeneration, InternVLForConditionalGeneration
+from transformers import AutoProcessor, LlavaForConditionalGeneration, InternVLForConditionalGeneration, AutoModelForImageTextToText
+
 
 def load_model(model_name):
 
@@ -34,6 +35,20 @@ def load_model(model_name):
         else:
             print("Reusing cached model and processor.")
             processor, model = _loaded_models[model_id]
+
+    elif model_name == "paligemma":
+
+        model_id = "google/paligemma2-3b-mix-224"
+        if model_id not in _loaded_models:
+            print("Loading model and processor...")
+            processor = AutoProcessor.from_pretrained(model_id)
+            model = AutoModelForImageTextToText.from_pretrained(
+                model_id, torch_dtype=torch.float16).to(device)
+            _loaded_models[model_id] = (processor, model)
+        else:
+            print("Reusing cached model and processor.")
+            processor, model = _loaded_models[model_id]
+
 
     return processor, model
 
@@ -104,7 +119,14 @@ def four_position(model_name, pos, colour=None):
     avg_baseline_attn = np.mean(np.array(baseline_attentions), axis=0)
     std_item1_attn = np.std(np.array(item1_attn), axis=0)
     std_item2_attn = np.std(np.array(item2_attn), axis=0)
-    layers = list(range(36))
+    std_item3_attn = np.std(np.array(item3_attn), axis=0)
+    std_item4_attn = np.std(np.array(item4_attn), axis=0)
+    if model_name == 'llava':
+        layers = list(range(32))
+    elif model_name == 'internvl':
+        layers = list(range(36))
+    elif model_name == 'paligemma':
+        layers = list(range(26))
     plt.figure(figsize=(10, 6))
     plt.plot(layers, avg_item1_attn, label='Top Left Shape Attention')
     plt.plot(layers, avg_item2_attn, label='Top Right Shape Attention')
@@ -112,27 +134,31 @@ def four_position(model_name, pos, colour=None):
     plt.plot(layers, avg_item4_attn, label='Bottom Right Shape Attention')
     plt.plot(layers, avg_baseline_attn, label='Baseline Attention', color='gray', linestyle='--')
     # plot confidence intervals
-    #plt.fill_between(layers, avg_item1_attn - std_item1_attn, avg_item1_attn + std_item1_attn, color='blue', alpha=0.2)
-    #plt.fill_between(layers, avg_item2_attn - std_item2_attn, avg_item2_attn + std_item2_attn, color='red', alpha=0.2)    
+    # plt.fill_between(layers, avg_item1_attn - std_item1_attn, avg_item1_attn + std_item1_attn, color='blue', alpha=0.2)
+    # plt.fill_between(layers, avg_item2_attn - std_item2_attn, avg_item2_attn + std_item2_attn, color='red', alpha=0.2)    
+    # plt.fill_between(layers, avg_item3_attn - std_item3_attn, avg_item3_attn + std_item3_attn, color='green', alpha=0.2)
+    # plt.fill_between(layers, avg_item4_attn - std_item4_attn, avg_item4_attn + std_item4_attn, color='orange', alpha=0.2)
     plt.xlabel('Layer')
     plt.ylabel('Attention')
     plt.title('Average Attention Scores Through Layers')
     plt.legend()
     # fix y axis limit
-    plt.ylim(0, 0.03)
-    plt.savefig(f'intern_plots/{pos}_{colour+"_" if colour else ""}all.png')
+    plt.ylim(0, 0.004)
+    #plt.ylim(0, 0.01)
+    #plt.ylim(0, 0.02)
+    plt.savefig(f'4_obj_plots/{model_name}_{pos}_{colour+"_" if colour else ""}all.png')
     print(f"Processed {count} images matching criteria.")
 
 
 if __name__ == "__main__":
-    four_position('internvl', 'top_left')
-    four_position('internvl', 'top_right')
-    four_position('internvl', 'bottom_left')
-    four_position('internvl', 'bottom_right')
-    four_position('internvl', 'neg_top_left')
-    four_position('internvl', 'neg_top_right')
-    four_position('internvl', 'neg_bottom_left')
-    four_position('internvl', 'neg_bottom_right')
+    four_position('llava', 'top_left')
+    four_position('llava', 'top_right')
+    four_position('llava', 'bottom_left')
+    four_position('llava', 'bottom_right')
+    four_position('llava', 'neg_top_left')
+    four_position('llava', 'neg_top_right')
+    four_position('llava', 'neg_bottom_left')
+    four_position('llava', 'neg_bottom_right')
     # four_position('internvl', 'top_left', 'red')
     # four_position('internvl', 'top_right', 'red')
     # four_position('internvl', 'bottom_left', 'red')

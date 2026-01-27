@@ -3,6 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import torch
 from transformers import AutoProcessor, LlavaForConditionalGeneration, InternVLForConditionalGeneration
+from PIL import Image
 
 def load_model(model_name):
 
@@ -38,13 +39,19 @@ def load_model(model_name):
     return processor, model
 
 
-processor, model = load_model("internvl")
-image_path = "2d_dataset_fixed_positions_1000/images/image_0004.png"
+processor, model = load_model("llava")
+image_path = "2d_dataset_fixed_positions_1000/images/image_0000.png"
+img = Image.open(image_path).convert("RGB")
+print("image size:", img.size)
 plotter = Plotter(image_path)
-left_colour = plotter.get_left_shapes()[0].colour
-right_colour = plotter.get_right_shapes()[0].colour
 plotter.set_model(model, processor)
-plotter.get_outputs(f"The figure is not {left_colour}")
-print("outputs:", plotter.print_output())
-plotter.plot_attention_through_layers(save_path=f'test_llava_0004_new.png')
+plotter.get_outputs("The figure is green")
+print(plotter.print_output())
+print(plotter.outputs["attentions"][0][0].shape) 
+# left_colour = plotter.get_left_shapes()[0].colour
+# right_colour = plotter.get_right_shapes()[0].colour
+# plotter.set_model(model, processor)
+# plotter.get_outputs(f"The figure is {left_colour}")
+# plotter.plot_bbox_on_attention_map("test_llava_map.png")
+
 

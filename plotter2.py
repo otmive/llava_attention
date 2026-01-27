@@ -21,35 +21,68 @@ class Plotter:
         img_path = Path(self.image)
         print("img path: ", img_path)
         self.labels_path = img_path.parent.parent / "detections.json"
-        W = 177
+        self.img = Image.open(self.image).convert("RGB")
+        orig_W, orig_H = self.img.size
+        # resize if too large
+        max_size = 448
+        if self.img.size[0] > max_size or self.img.size[1] > max_size:
+            self.img = self.img.resize((max_size, max_size))
+        W, H = self.img.size
         with open(self.labels_path, 'r') as f:
             data = json.load(f)
 
         image_name = os.path.basename(img_path)
         shapes = []
-        for img_path, detections in data:
+        for img_path, detections in data.items():
             if img_path == image_name:
+                print("length detections:", len(detections))
                 for item in detections:
+                    print(item['name'], item['bbox'])
                     shape = item['name']
                     bbox = item['bbox']  # [x1, y1, x2, y2]
+
+                    # check if this item is further left than the other item 
+                    if len(detections) > 1:
+                        other_item = [d for d in detections if d != item][0]
+                        other_bbox = other_item['bbox']
+                        if bbox[0] > other_bbox[0]:
+                            position = 'right'
+                        else:
+                            position = 'left'
                     
-                    orig_W, orig_H = 256, 256
+                    # orig_W, orig_H = 1280, 960
 
                     scale_x = W / orig_W
-                    scale_y = W / orig_H
+                    scale_y = H / orig_H
 
                     x1, y1, x2, y2 = bbox
                     x1 *= scale_x
                     x2 *= scale_x
                     y1 *= scale_y
                     y2 *= scale_y
-                    # flip coordinates in y axis
-                    y1 = W - y1
-                    y2 = W - y2
+                    # # flip coordinates in y axis
+                    # y1 = W - y1
+                    # y2 = W - y2
 
-                    position = next(pos for pos, col in item['spatial_arrangement'].items() if col == colour)
+                    print("Original bbox:", bbox)
+
+                    colour = item['name']
+                    print("shape:", shape)
+                    print("image split:", image_name.split('_')[0])
+                    shape_name = shape.replace(' ','-')
+                    # if shape_name == image_name.split('_')[0]:
+                    #     if 'left' in image_name:
+                    #         position = 'left'
+                    #     else:
+                    #         position = 'right'
+                    # else:
+                    #     if 'left' in image_name:
+                    #         position = 'right'
+                    #     else:
+                    #         position = 'left'
                     # store swapped ys because y1 is bigger than y2
-                    shapes.append(self.Shape(colour, shape, [x1, y2, x2, y1], position))
+                    shapes.append(self.Shape(colour, shape, [x1, y1, x2, y2], position))
+                    print(f"Added shape: {shape}, bbox: {[x1, y1, x2, y2]}, position: {position}")
 
             self.shapes = shapes
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
@@ -82,7 +115,7 @@ class Plotter:
     #     self.processor = processor
 
     def set_model(self, model, processor):
-        self.model = model.to(self.device)
+        self.model = model
         self.processor = processor
         model.config.output_attentions = True
         if hasattr(self.model, "text_model"):
@@ -94,6 +127,8 @@ class Plotter:
     def get_outputs(self, prompt):
         print("in get outputs")
         image = Image.open(self.image).convert("RGB")
+        # resize image to 448x448
+        image = self.img
         self.prompt = prompt
 
         conversation = [
@@ -113,17 +148,20 @@ class Plotter:
                 
             inputs = self.processor(
                 images=image,
-                text=f"<IMG_CONTEXT>\n {self.prompt}",
+                text=f"<IMG_CONTEXT>\nUser: {self.prompt}\nAssistant:",
                 # truncation="only_second",
                 padding=True,
                 return_tensors='pt'
             ).to(self.device, torch.float16)
             self.inputs = {k: v.to(self.device) for k, v in inputs.items()}
-            input_ids = self.inputs["input_ids"].to(self.device)
+            #input_ids = self.inputs["input_ids"].to(self.device)
             for k, v in inputs.items():
                 if torch.is_tensor(v):
                     print(k, v.device)
             self.inputs["pixel_values"] = self.inputs["pixel_values"].to(self.device)
+
+
+
     
         elif "llava" in self.model.config._name_or_path:
 
@@ -144,15 +182,22 @@ class Plotter:
         # print model device
         print("Model device:", next(self.model.parameters()).device)
 
-        self.outputs = self.model.generate(**self.inputs, max_new_tokens=1, do_sample=False, output_attentions=True, return_dict_in_generate=True)
+        self.outputs = self.model.generate(**self.inputs, max_new_tokens=2, do_sample=False, output_attentions=True, return_dict_in_generate=True)
         
         return self.outputs
     
     def print_output(self):
-        generated_text = self.processor.batch_decode(self.outputs.sequences, skip_special_tokens=True)[0]
-        #print(generated_text)
-        return generated_text
+        ## check model type
+        if "InternVL" in self.model.config._name_or_path:
+            generated_text = self.processor.decode(
+                self.outputs.sequences[0],
+                skip_special_tokens=True
+            )
+        elif "llava" in self.model.config._name_or_path:
+            generated_text = self.processor.batch_decode(self.outputs.sequences, skip_special_tokens=True)[0]
 
+        return generated_text
+    
     def get_matrix_all_layers(self):
         num_layers = len(self.outputs["attentions"][0])  # Get number of layers
 
@@ -302,6 +347,26 @@ class Plotter:
         plt.axis('off')
         plt.savefig(save_path)
 
+    def plot_bbox_on_image(self, save_path):
+        import matplotlib.patches as patches
+        import numpy as np
+
+        fig = plt.figure()
+        img_numpy = np.array(self.img) / 255.0
+        fig, ax = plt.subplots(figsize=(6, 6))
+        ax.imshow(img_numpy)
+
+        for shape in self.shapes:
+            x1, y1, x2, y2 = shape.bbox
+            width = x2 - x1
+            height = y2 - y1
+            rect = patches.Rectangle((x1, y1), width, height, linewidth=2, edgecolor='r', facecolor='none')
+            ax.add_patch(rect)
+            ax.text(x1, y1 - 10, shape.shape, color='red', fontsize=12, weight='bold')
+
+        plt.savefig(save_path, bbox_inches='tight')
+        plt.close(fig)
+
 
     def plot_bbox_on_attention_map(self, save_path, layer_idx=None):
         import matplotlib.patches as patches
@@ -311,31 +376,46 @@ class Plotter:
         fig = plt.figure()
         attn_matrix = self.get_image_attention_matrix(layer_idx)
         
+        #img = Image.open(self.image).convert("RGB")
+
         attn_mask = np.zeros_like(attn_matrix)
         for shape in self.shapes:
             x1, y1, x2, y2 = shape.bbox
             # scale bounding box to attention heatmap size
-            scale = attn_matrix.shape[0] / 177
-            bbox_heatmap = [x1 * scale, y1 * scale, x2 * scale, y2 * scale]
+            #scale = attn_matrix.shape[0] / 177
+
+            # set scale based on image size 1280x960
+            scale_x = attn_matrix.shape[0] / self.img.size[0]
+            scale_y = attn_matrix.shape[1] / self.img.size[1]
+
+            bbox_heatmap = [x1 * scale_x, y1 * scale_y, x2 * scale_x, y2 * scale_y]
             x1, y1, x2, y2 = bbox_heatmap
 
             x1, y1, x2, y2 = int(x1), int(y1), int(x2), int(y2)
 
+            print("original bbox:", shape.bbox)
+            print("scaled bbox:", [x1, y1, x2, y2])
+            print("attention map shape:", attn_matrix.shape)
+            print("image shape:", self.img.size)
+
             # set attn_mask values within bbox to 1
             attn_mask[y1:y2+1, x1:x2+1] = 1.0
 
-        img = Image.open(self.image).convert("RGB")
-        img_numpy = np.array(img) / 255.0
+            print("attention mask after bbox:", attn_mask)
+
+        
+        img_numpy = np.array(self.img) / 255.0
         # print("Image shape:", img_numpy.shape)
         # print("Attention mask shape:", attn_mask.shape)
         fig, ax = plt.subplots(figsize=(6, 6))
         ax.imshow(img_numpy)
         attn_mask_resized = F.interpolate(
             torch.tensor(attn_mask).unsqueeze(0).unsqueeze(0),
-            size=img.size[::-1],  # PIL uses (W, H), PyTorch uses (H, W)
+            size=self.img.size[::-1],  # PIL uses (W, H), PyTorch uses (H, W)
             mode='bicubic',
             align_corners=False
         ).squeeze().numpy()
+        print("Resized attention mask shape:", attn_mask_resized.shape)
         ax.imshow(attn_mask_resized, cmap='viridis', alpha=0.7  )
         plt.savefig(save_path, bbox_inches='tight')
         plt.close(fig)
@@ -347,20 +427,33 @@ class Plotter:
             self.plot_image_attention(save_path, layer_idx=layer_idx)
 
     def get_bbox_attention_for_layer(self, shape, layer_idx):
-
+        import numpy as np
         attn = self.get_image_attention_matrix(layer_idx)
         x1, y1, x2, y2 = shape.bbox
         # scale bounding box to attention heatmap size
-        scale = attn.shape[0] / 177
-        bbox_heatmap = [x1 * scale, y1 * scale, x2 * scale, y2 * scale]
+        scale_x = attn.shape[1] / self.img.size[0]
+        scale_y = attn.shape[0] / self.img.size[1]
+
+        bbox_heatmap = [x1 * scale_x, y1 * scale_y, x2 * scale_x, y2 * scale_y]
         x1, y1, x2, y2 = bbox_heatmap
 
         x1, y1, x2, y2 = int(x1), int(y1), int(x2), int(y2)
+
+        # print("original bbox:", shape.bbox)
+        # print("scaled bbox:", [x1, y1, x2, y2])
+        # print("attention map shape:", attn_matrix.shape)
+        # print("image shape:", self.img.size)
+
+        attn_mask = np.zeros_like(attn)
+
+        # set attn_mask values within bbox to 1
+        attn_mask[y1:y2+1, x1:x2+1] = 1.0
         
         # calculate number of tokens in the bounding box
 
         bbox_tokens = (x2 - x1 + 1) * (y2 - y1 + 1)
-        #print("number tokens in bbox", bbox_tokens)
+        print("number tokens in bbox", bbox_tokens)
+        print("number of tokens in mask:", attn_mask.sum())
         # plot attention heatmap but only for values within the bounding box
         return attn[y1:y2+1, x1:x2+1].sum().item()/bbox_tokens
         
@@ -372,8 +465,10 @@ class Plotter:
         for shape in shapes:
             x1, y1, x2, y2 = shape.bbox
             # scale bounding box to attention heatmap size
-            scale = attn.shape[0] / 177
-            bbox_heatmap = [x1 * scale, y1 * scale, x2 * scale, y2 * scale]
+            scale_x = attn.shape[1] / self.img.size[0]
+            scale_y = attn.shape[0] / self.img.size[1]
+
+            bbox_heatmap = [x1 * scale_x, y1 * scale_y, x2 * scale_x, y2 * scale_y]
             x1, y1, x2, y2 = bbox_heatmap
             x1, y1, x2, y2 = int(x1), int(y1), int(x2), int(y2)
             bbox_tokens = (x2 - x1 + 1) * (y2 - y1 + 1)
@@ -398,13 +493,13 @@ class Plotter:
             # Plot attention for each colour through layers
             plt.figure(figsize=(10, 6))
             for colour, bbox_attn in bbox_attentions.items():
-                plt.plot(layers, bbox_attn, label=f"{colour.capitalize()} Shape", marker='o', color=colour if colour != 'yellow' else 'gold')
+                plt.plot(layers, bbox_attn, label=f"{colour.capitalize()} Shape", marker='o')
             plt.plot(baseline_attn, label="Baseline Attention", linestyle='--', color='grey')
             plt.xlabel("Layer")
             plt.ylabel("Attention to Bounding Box")
             plt.title("Attention to Bounding Box Across Layers")
             if ylimit is not None:
-                plt.ylim(ylimit)    
+                plt.ylim(0, ylimit)    
             plt.legend()
             plt.tight_layout()
             plt.savefig(save_path)

@@ -1,6 +1,12 @@
 import json
-from plotter2 import Plotter
+from plotter import Plotter
 from PIL import Image
+import torch
+from transformers import AutoProcessor
+from transformers import InternVLForConditionalGeneration
+from transformers import LlavaForConditionalGeneration, AutoModelForImageTextToText
+import os
+import torch 
 
 def load_model(model_name):
 
@@ -33,25 +39,58 @@ def load_model(model_name):
             print("Reusing cached model and processor.")
             processor, model = _loaded_models[model_id]
 
+    elif model_name == "paligemma":
+
+        model_id = "google/paligemma2-3b-mix-224"
+        if model_id not in _loaded_models:
+            print("Loading model and processor...")
+            processor = AutoProcessor.from_pretrained(model_id)
+            model = AutoModelForImageTextToText.from_pretrained(
+                model_id, torch_dtype=torch.float16).to(device)
+            _loaded_models[model_id] = (processor, model)
+        else:
+            print("Reusing cached model and processor.")
+            processor, model = _loaded_models[model_id]
+
+
     return processor, model
 
-with open('whatsup/controlled_images/detections.json', 'r') as file:
+with open('whatsup/detections.json', 'r') as file:
     data = json.load(file)
 
-# print out first 5 entries
-for img_path, detections in list(data.items())[0]:
-    print(f"Image Path: {img_path}")
-    #print(f"Detections: {detections}")
-    for det in detections:
-        print(det['name'], det['bbox'])
 
-    processor, model = load_model("llava")
-    full_img_path = f"whatsup/controlled_images/{img_path}"
-    plotter = Plotter(full_img_path)
-    plotter.set_model(model, processor)
-    left_shape = plotter.get_left_shapes()
-    
-    # print size of image
-    image = Image.open(full_img_path)
-    width, height = image.size
-    print(f"Image size: {width}x{height}")
+print(f"Total images with detections: {len(data)}")
+print("first image with detections: ")
+
+# print out first 5 entries
+# for img_path, detections in list(data.items())[0]:
+
+# for img_path in os.listdir('whatsup/controlled_images'):
+
+
+img_path = 'apple_left_of_armchair.jpeg'
+print(f"Image Path: {img_path}")
+
+processor, model = load_model("llava")
+full_img_path = f"whatsup/controlled_images/{img_path}"
+plotter = Plotter(full_img_path)
+plotter.set_model(model, processor)
+left_shape = plotter.get_left_shapes()
+print("Left shape:", left_shape[0].shape)
+
+# print size of image
+image = Image.open(full_img_path)
+width, height = image.size
+print(f"Image size: {width}x{height}")
+# print memory usage at this point
+print(f"Memory allocated: {torch.cuda.memory_allocated() / (1024 ** 2)} MB")    
+
+plotter.get_outputs("The figure is a apple")
+print("ran get_outputs")
+# plotter.plot_bbox_on_attention_map(save_path="test_bbox_map.png")
+# print("plotted bbox on attention map")
+# plotter.plot_bbox_on_image(save_path="test_bbox_image.png")
+# print("plotted bbox on image")
+plotter.plot_attention_through_layers(save_path="apple_chair_llava.png", ylimit=0.04)
+print("plotted attention through layers")
+print(plotter.print_output())
