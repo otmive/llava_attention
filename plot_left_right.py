@@ -7,8 +7,6 @@ from transformers import AutoModelForImageTextToText
 import gc
 import multiprocessing as mp 
 
-HF_TOKEN = "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"
-
 def load_model(model_name):
 
     device = "cuda" if torch.cuda.is_available() else "cpu"
@@ -45,9 +43,9 @@ def load_model(model_name):
         model_id = "google/paligemma2-3b-mix-224"
         if model_id not in _loaded_models:
             print("Loading model and processor...")
-            processor = AutoProcessor.from_pretrained(model_id, token=HF_TOKEN)
+            processor = AutoProcessor.from_pretrained(model_id)
             model = AutoModelForImageTextToText.from_pretrained(
-                model_id, torch_dtype=torch.float16, token=HF_TOKEN).to(device)
+                model_id, torch_dtype=torch.float16).to(device)
             _loaded_models[model_id] = (processor, model)
         else:
             print("Reusing cached model and processor.")
@@ -64,13 +62,13 @@ def plot_left_right(model_name, image_path):
     plotter.set_model(model, processor)
     left_colour = plotter.get_left_shapes()[0].colour
     right_colour = plotter.get_right_shapes()[0].colour
-    plotter.get_outputs(f"The figure is {left_colour}")
+    plotter.get_outputs(f"The object is a {left_colour}")
     l_bbox_attentions, l_baseline_attn = plotter.plot_attention_through_layers()
-    plotter.get_outputs(f"The figure is {right_colour}")
+    plotter.get_outputs(f"The object is a {right_colour}")
     r_bbox_attentions, r_baseline_attn = plotter.plot_attention_through_layers()
-    plotter.get_outputs(f"The figure is not {left_colour}")
+    plotter.get_outputs(f"The object is not a {left_colour}")
     ln_bbox_attentions, ln_baseline_attn = plotter.plot_attention_through_layers()
-    plotter.get_outputs(f"The figure is not{right_colour}")
+    plotter.get_outputs(f"The object is not a {right_colour}")
     rn_bbox_attentions, rn_baseline_attn = plotter.plot_attention_through_layers()
 
     # get max value of both left and right attentions
@@ -84,8 +82,16 @@ def plot_left_right(model_name, image_path):
     layers = list(range(num_layers))
     # plot the attentions for the left colour in a plot
     plt.figure(figsize=(10, 6))
-    plt.plot(layers, l_bbox_attentions[left_colour], label=f'Left Shape Attention ({left_colour})', color= left_colour if left_colour in ['red', 'blue', 'green'] else 'gold')
-    plt.plot(layers, l_bbox_attentions[right_colour], label=f'Right Shape Attention ({right_colour})', color=right_colour if right_colour in ['red', 'blue', 'green'] else 'gold')
+    if left_colour in ['red', 'blue', 'green', 'yellow']:
+        left_plot_colour = left_colour if left_colour in ['red', 'blue', 'green'] else 'gold'
+    else:
+        left_plot_colour = None
+    if right_colour in ['red', 'blue', 'green', 'yellow']:
+        right_plot_colour = right_colour if right_colour in ['red', 'blue', 'green'] else 'gold'
+    else:
+        right_plot_colour = None
+    plt.plot(layers, l_bbox_attentions[left_colour], label=f'Left Shape Attention ({left_colour})', color=left_plot_colour)
+    plt.plot(layers, l_bbox_attentions[right_colour], label=f'Right Shape Attention ({right_colour})', color=right_plot_colour)
     plt.plot(layers, l_baseline_attn, label='Baseline Attention', color='gray', linestyle='--')
     plt.xlabel('Layer')
     plt.ylabel('Attention')
@@ -93,12 +99,12 @@ def plot_left_right(model_name, image_path):
     plt.legend()
     # fix y axis limit
     plt.ylim(0, overall_max * 1.1)  
-    plt.savefig(f'{model_name}_left_{image_path.split("/")[-1].split(".")[0]}_attention.png')
+    plt.savefig(f'plots/single_image/{model_name}_left_{image_path.split("/")[-1].split(".")[0]}_attention.png')
 
     # plot the attentions for the right colour in a plot
     plt.figure(figsize=(10, 6))
-    plt.plot(layers, r_bbox_attentions[left_colour], label=f'Left Shape Attention ({left_colour})', color=left_colour if left_colour in ['red', 'blue', 'green'] else 'gold')
-    plt.plot(layers, r_bbox_attentions[right_colour], label=f'Right Shape Attention ({right_colour})', color=right_colour if right_colour in ['red', 'blue', 'green'] else 'gold')
+    plt.plot(layers, r_bbox_attentions[left_colour], label=f'Left Shape Attention ({left_colour})', color=left_plot_colour)
+    plt.plot(layers, r_bbox_attentions[right_colour], label=f'Right Shape Attention ({right_colour})', color=right_plot_colour)
     plt.plot(layers, r_baseline_attn, label='Baseline Attention', color='gray', linestyle='--')
     plt.xlabel('Layer')
     plt.ylabel('Attention')
@@ -106,12 +112,12 @@ def plot_left_right(model_name, image_path):
     plt.legend()
     # fix y axis limit
     plt.ylim(0, overall_max * 1.1)  
-    plt.savefig(f'{model_name}_right_{image_path.split("/")[-1].split(".")[0]}_attention.png')
+    plt.savefig(f'plots/single_image/{model_name}_right_{image_path.split("/")[-1].split(".")[0]}_attention.png')
     
     # plot negated versions
     plt.figure(figsize=(10, 6))
-    plt.plot(layers, ln_bbox_attentions[left_colour], label=f'Left Shape Attention ({left_colour})', color= left_colour if left_colour in ['red', 'blue', 'green'] else 'gold')
-    plt.plot(layers, ln_bbox_attentions[right_colour], label=f'Right Shape Attention ({right_colour})', color=right_colour if right_colour in ['red', 'blue', 'green'] else 'gold')
+    plt.plot(layers, ln_bbox_attentions[left_colour], label=f'Left Shape Attention ({left_colour})', color=left_plot_colour)
+    plt.plot(layers, ln_bbox_attentions[right_colour], label=f'Right Shape Attention ({right_colour})', color=right_plot_colour)
     plt.plot(layers, ln_baseline_attn, label='Baseline Attention', color='gray', linestyle='--')
     plt.xlabel('Layer')
     plt.ylabel('Attention')
@@ -119,12 +125,12 @@ def plot_left_right(model_name, image_path):
     plt.legend()
     # fix y axis limit
     plt.ylim(0, overall_max * 1.1)  
-    plt.savefig(f'{model_name}_neg_left_{image_path.split("/")[-1].split(".")[0]}_attention.png')
+    plt.savefig(f'plots/single_image/{model_name}_neg_left_{image_path.split("/")[-1].split(".")[0]}_attention.png')
 
     # plot the attentions for the right colour in a plot
     plt.figure(figsize=(10, 6))
-    plt.plot(layers, rn_bbox_attentions[left_colour], label=f'Left Shape Attention ({left_colour})', color=left_colour if left_colour in ['red', 'blue', 'green'] else 'gold')
-    plt.plot(layers, rn_bbox_attentions[right_colour], label=f'Right Shape Attention ({right_colour})', color=right_colour if right_colour in ['red', 'blue', 'green'] else 'gold')
+    plt.plot(layers, rn_bbox_attentions[left_colour], label=f'Left Shape Attention ({left_colour})', color=left_plot_colour)
+    plt.plot(layers, rn_bbox_attentions[right_colour], label=f'Right Shape Attention ({right_colour})', color=right_plot_colour)
     plt.plot(layers, rn_baseline_attn, label='Baseline Attention', color='gray', linestyle='--')
     plt.xlabel('Layer')
     plt.ylabel('Attention')
@@ -132,7 +138,7 @@ def plot_left_right(model_name, image_path):
     plt.legend()
     # fix y axis limit
     plt.ylim(0, overall_max * 1.1)  
-    plt.savefig(f'{model_name}_neg_right_{image_path.split("/")[-1].split(".")[0]}_attention.png')
+    plt.savefig(f'plots/single_image/{model_name}_neg_right_{image_path.split("/")[-1].split(".")[0]}_attention.png')
     # free up memory
     del model
     del processor
@@ -146,8 +152,8 @@ def plot_left_right(model_name, image_path):
 # plot_left_right("paligemma", image_path)
 
 if __name__ == "__main__":
-    image_path = "2d_dataset_fixed_positions_1000/images/image_0001.png"
-    model_names = ["llava", "internvl", "paligemma"]
+    image_path = "2d_dataset_fixed_positions_1000/images/image_0000.png"
+    model_names = ["paligemma"]
     processes = []
     for model_name in model_names:
         p = mp.Process(target=plot_left_right, args=(model_name, image_path))

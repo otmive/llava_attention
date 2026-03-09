@@ -1,0 +1,757 @@
+{
+    "llava": {
+        "positive": {
+            "correct": 100,
+            "total": 100,
+            "examples": []
+        },
+        "negative": {
+            "correct": 49,
+            "total": 100,
+            "examples": [
+                [
+                    "image_0826.png",
+                    "Is this sentence correct? The object on the left is not yellow. Answer yes or no.",
+                    "No"
+                ],
+                [
+                    "image_0297.png",
+                    "Is this sentence correct? The object on the right is not green. Answer yes or no.",
+                    "No"
+                ],
+                [
+                    "image_0996.png",
+                    "Is this sentence correct? The object on the left is not yellow. Answer yes or no.",
+                    "No"
+                ],
+                [
+                    "image_0452.png",
+                    "Is this sentence correct? The object on the right is not yellow. Answer yes or no.",
+                    "No"
+                ],
+                [
+                    "image_0470.png",
+                    "Is this sentence correct? The object on the right is not blue. Answer yes or no.",
+                    "No"
+                ],
+                [
+                    "image_0479.png",
+                    "Is this sentence correct? The object on the right is not blue. Answer yes or no.",
+                    "No"
+                ],
+                [
+                    "image_0959.png",
+                    "Is this sentence correct? The object on the right is not green. Answer yes or no.",
+                    "No"
+                ],
+                [
+                    "image_0161.png",
+                    "Is this sentence correct? The object on the right is not blue. Answer yes or no.",
+                    "No"
+                ],
+                [
+                    "image_0598.png",
+                    "Is this sentence correct? The object on the right is not green. Answer yes or no.",
+                    "No"
+                ],
+                [
+                    "image_0873.png",
+                    "Is this sentence correct? The object on the right is not green. Answer yes or no.",
+                    "No"
+                ],
+                [
+                    "image_0831.png",
+                    "Is this sentence correct? The object on the right is not blue. Answer yes or no.",
+                    "No"
+                ],
+                [
+                    "image_0599.png",
+                    "Is this sentence correct? The object on the left is not yellow. Answer yes or no.",
+                    "No"
+                ],
+                [
+                    "image_0263.png",
+                    "Is this sentence correct? The object on the right is not blue. Answer yes or no.",
+                    "No"
+                ],
+                [
+                    "image_0361.png",
+                    "Is this sentence correct? The object on the right is not yellow. Answer yes or no.",
+                    "No"
+                ],
+                [
+                    "image_0529.png",
+                    "Is this sentence correct? The object on the left is not yellow. Answer yes or no.",
+                    "No"
+                ],
+                [
+                    "image_0652.png",
+                    "Is this sentence correct? The object on the right is not green. Answer yes or no.",
+                    "No"
+                ],
+                [
+                    "image_0451.png",
+                    "Is this sentence correct? The object on the right is not blue. Answer yes or no.",
+                    "No"
+                ],
+                [
+                    "image_0538.png",
+                    "Is this sentence correct? The object on the right is not green. Answer yes or no.",
+                    "No"
+                ],
+                [
+                    "image_0458.png",
+                    "Is this sentence correct? The object on the right is not yellow. Answer yes or no.",
+                    "No"
+                ],
+                [
+                    "image_0328.png",
+                    "Is this sentence correct? The object on the left is not yellow. Answer yes or no.",
+                    "No"
+                ],
+                [
+                    "image_0922.png",
+                    "Is this sentence correct? The object on the right is not green. Answer yes or no.",
+                    "No"
+                ],
+                [
+                    "image_0192.png",
+                    "Is this sentence correct? The object on the right is not yellow. Answer yes or no.",
+                    "No"
+                ],
+                [
+                    "image_0156.png",
+                    "Is this sentence correct? The object on the right is not blue. Answer yes or no.",
+                    "No"
+                ],
+                [
+                    "image_0295.png",
+                    "Is this sentence correct? The object on the left is not green. Answer yes or no.",
+                    "No"
+                ],
+                [
+                    "image_0916.png",
+                    "Is this sentence correct? The object on the left is not green. Answer yes or no.",
+                    "No"
+                ],
+                [
+                    "image_0579.png",
+                    "Is this sentence correct? The object on the right is not red. Answer yes or no.",
+                    "No"
+                ],
+                [
+                    "image_0370.png",
+                    "Is this sentence correct? The object on the left is not yellow. Answer yes or no.",
+                    "No"
+                ],
+                [
+                    "image_0777.png",
+                    "Is this sentence correct? The object on the right is not green. Answer yes or no.",
+                    "No"
+                ],
+                [
+                    "image_0610.png",
+                    "Is this sentence correct? The object on the right is not green. Answer yes or no.",
+                    "No"
+                ],
+                [
+                    "image_0766.png",
+                    "Is this sentence correct? The object on the left is not yellow. Answer yes or no.",
+                    "No"
+                ],
+                [
+                    "image_0950.png",
+                    "Is this sentence correct? The object on the left is not yellow. Answer yes or no.",
+                    "No"
+                ],
+                [
+                    "image_0797.png",
+                    "Is this sentence correct? The object on the right is not yellow. Answer yes or no.",
+                    "No"
+                ],
+                [
+                    "image_0886.png",
+                    "Is this sentence correct? The object on the right is not red. Answer yes or no.",
+                    "No"
+                ],
+                [
+                    "image_0088.png",
+                    "Is this sentence correct? The object on the right is not blue. Answer yes or no.",
+                    "No"
+                ],
+                [
+                    "image_0441.png",
+                    "Is this sentence correct? The object on the right is not yellow. Answer yes or no.",
+                    "No"
+                ],
+                [
+                    "image_0073.png",
+                    "Is this sentence correct? The object on the left is not yellow. Answer yes or no.",
+                    "No"
+                ],
+                [
+                    "image_0425.png",
+                    "Is this sentence correct? The object on the right is not yellow. Answer yes or no.",
+                    "No"
+                ],
+                [
+                    "image_0213.png",
+                    "Is this sentence correct? The object on the right is not yellow. Answer yes or no.",
+                    "No"
+                ],
+                [
+                    "image_0914.png",
+                    "Is this sentence correct? The object on the left is not yellow. Answer yes or no.",
+                    "No"
+                ],
+                [
+                    "image_0202.png",
+                    "Is this sentence correct? The object on the left is not yellow. Answer yes or no.",
+                    "No"
+                ],
+                [
+                    "image_0474.png",
+                    "Is this sentence correct? The object on the left is not green. Answer yes or no.",
+                    "No"
+                ],
+                [
+                    "image_0473.png",
+                    "Is this sentence correct? The object on the right is not green. Answer yes or no.",
+                    "No"
+                ],
+                [
+                    "image_0071.png",
+                    "Is this sentence correct? The object on the right is not blue. Answer yes or no.",
+                    "No"
+                ],
+                [
+                    "image_0675.png",
+                    "Is this sentence correct? The object on the right is not blue. Answer yes or no.",
+                    "No"
+                ],
+                [
+                    "image_0407.png",
+                    "Is this sentence correct? The object on the right is not yellow. Answer yes or no.",
+                    "No"
+                ],
+                [
+                    "image_0926.png",
+                    "Is this sentence correct? The object on the right is not yellow. Answer yes or no.",
+                    "No"
+                ],
+                [
+                    "image_0852.png",
+                    "Is this sentence correct? The object on the left is not yellow. Answer yes or no.",
+                    "No"
+                ],
+                [
+                    "image_0494.png",
+                    "Is this sentence correct? The object on the left is not blue. Answer yes or no.",
+                    "No"
+                ],
+                [
+                    "image_0402.png",
+                    "Is this sentence correct? The object on the right is not yellow. Answer yes or no.",
+                    "No"
+                ],
+                [
+                    "image_0510.png",
+                    "Is this sentence correct? The object on the right is not yellow. Answer yes or no.",
+                    "No"
+                ],
+                [
+                    "image_0039.png",
+                    "Is this sentence correct? The object on the left is not yellow. Answer yes or no.",
+                    "No"
+                ]
+            ]
+        },
+        "positive_false": {
+            "correct": 71,
+            "total": 100,
+            "examples": [
+                [
+                    "image_0515.png",
+                    "Is this sentence correct? The object on the left is yellow. Answer yes or no.",
+                    "Yes"
+                ],
+                [
+                    "image_0481.png",
+                    "Is this sentence correct? The object on the right is green. Answer yes or no.",
+                    "Yes"
+                ],
+                [
+                    "image_0452.png",
+                    "Is this sentence correct? The object on the right is yellow. Answer yes or no.",
+                    "Yes"
+                ],
+                [
+                    "image_0224.png",
+                    "Is this sentence correct? The object on the right is green. Answer yes or no.",
+                    "Yes"
+                ],
+                [
+                    "image_0873.png",
+                    "Is this sentence correct? The object on the left is blue. Answer yes or no.",
+                    "Yes"
+                ],
+                [
+                    "image_0831.png",
+                    "Is this sentence correct? The object on the right is blue. Answer yes or no.",
+                    "Yes"
+                ],
+                [
+                    "image_0200.png",
+                    "Is this sentence correct? The object on the left is green. Answer yes or no.",
+                    "Yes"
+                ],
+                [
+                    "image_0787.png",
+                    "Is this sentence correct? The object on the right is green. Answer yes or no.",
+                    "Yes"
+                ],
+                [
+                    "image_0102.png",
+                    "Is this sentence correct? The object on the right is yellow. Answer yes or no.",
+                    "Yes"
+                ],
+                [
+                    "image_0652.png",
+                    "Is this sentence correct? The object on the left is blue. Answer yes or no.",
+                    "Yes"
+                ],
+                [
+                    "image_0458.png",
+                    "Is this sentence correct? The object on the right is yellow. Answer yes or no.",
+                    "Yes"
+                ],
+                [
+                    "image_0328.png",
+                    "Is this sentence correct? The object on the left is yellow. Answer yes or no.",
+                    "Yes"
+                ],
+                [
+                    "image_0251.png",
+                    "Is this sentence correct? The object on the right is yellow. Answer yes or no.",
+                    "Yes"
+                ],
+                [
+                    "image_0295.png",
+                    "Is this sentence correct? The object on the left is green. Answer yes or no.",
+                    "Yes"
+                ],
+                [
+                    "image_0171.png",
+                    "Is this sentence correct? The object on the right is green. Answer yes or no.",
+                    "Yes"
+                ],
+                [
+                    "image_0370.png",
+                    "Is this sentence correct? The object on the left is yellow. Answer yes or no.",
+                    "Yes"
+                ],
+                [
+                    "image_0610.png",
+                    "Is this sentence correct? The object on the right is green. Answer yes or no.",
+                    "Yes"
+                ],
+                [
+                    "image_0132.png",
+                    "Is this sentence correct? The object on the right is yellow. Answer yes or no.",
+                    "Yes"
+                ],
+                [
+                    "image_0286.png",
+                    "Is this sentence correct? The object on the right is yellow. Answer yes or no.",
+                    "Yes"
+                ],
+                [
+                    "image_0441.png",
+                    "Is this sentence correct? The object on the right is yellow. Answer yes or no.",
+                    "Yes"
+                ],
+                [
+                    "image_0425.png",
+                    "Is this sentence correct? The object on the right is yellow. Answer yes or no.",
+                    "Yes"
+                ],
+                [
+                    "image_0213.png",
+                    "Is this sentence correct? The object on the left is green. Answer yes or no.",
+                    "Yes"
+                ],
+                [
+                    "image_0001.png",
+                    "Is this sentence correct? The object on the right is yellow. Answer yes or no.",
+                    "Yes"
+                ],
+                [
+                    "image_0202.png",
+                    "Is this sentence correct? The object on the right is green. Answer yes or no.",
+                    "Yes"
+                ],
+                [
+                    "image_0473.png",
+                    "Is this sentence correct? The object on the left is blue. Answer yes or no.",
+                    "Yes"
+                ],
+                [
+                    "image_0739.png",
+                    "Is this sentence correct? The object on the right is green. Answer yes or no.",
+                    "Yes"
+                ],
+                [
+                    "image_0852.png",
+                    "Is this sentence correct? The object on the left is yellow. Answer yes or no.",
+                    "Yes"
+                ],
+                [
+                    "image_0510.png",
+                    "Is this sentence correct? The object on the right is yellow. Answer yes or no.",
+                    "Yes"
+                ],
+                [
+                    "image_0039.png",
+                    "Is this sentence correct? The object on the right is green. Answer yes or no.",
+                    "Yes"
+                ]
+            ]
+        },
+        "negative_false": {
+            "correct": 88,
+            "total": 100,
+            "examples": [
+                [
+                    "image_0163.png",
+                    "Is this sentence correct? The object on the right is not red. Answer yes or no.",
+                    "Yes"
+                ],
+                [
+                    "image_0736.png",
+                    "Is this sentence correct? The object on the right is not blue. Answer yes or no.",
+                    "Yes"
+                ],
+                [
+                    "image_0479.png",
+                    "Is this sentence correct? The object on the right is not red. Answer yes or no.",
+                    "Yes"
+                ],
+                [
+                    "image_0598.png",
+                    "Is this sentence correct? The object on the right is not red. Answer yes or no.",
+                    "Yes"
+                ],
+                [
+                    "image_0694.png",
+                    "Is this sentence correct? The object on the right is not red. Answer yes or no.",
+                    "Yes"
+                ],
+                [
+                    "image_0787.png",
+                    "Is this sentence correct? The object on the left is not green. Answer yes or no.",
+                    "Yes"
+                ],
+                [
+                    "image_0451.png",
+                    "Is this sentence correct? The object on the right is not red. Answer yes or no.",
+                    "Yes"
+                ],
+                [
+                    "image_0772.png",
+                    "Is this sentence correct? The object on the right is not red. Answer yes or no.",
+                    "Yes"
+                ],
+                [
+                    "image_0777.png",
+                    "Is this sentence correct? The object on the right is not red. Answer yes or no.",
+                    "Yes"
+                ],
+                [
+                    "image_0286.png",
+                    "Is this sentence correct? The object on the right is not red. Answer yes or no.",
+                    "Yes"
+                ],
+                [
+                    "image_0441.png",
+                    "Is this sentence correct? The object on the right is not blue. Answer yes or no.",
+                    "Yes"
+                ],
+                [
+                    "image_0054.png",
+                    "Is this sentence correct? The object on the right is not blue. Answer yes or no.",
+                    "Yes"
+                ]
+            ]
+        }
+    },
+    "internvl": {
+        "positive": {
+            "correct": 100,
+            "total": 100,
+            "examples": []
+        },
+        "negative": {
+            "correct": 100,
+            "total": 100,
+            "examples": []
+        },
+        "positive_false": {
+            "correct": 100,
+            "total": 100,
+            "examples": []
+        },
+        "negative_false": {
+            "correct": 100,
+            "total": 100,
+            "examples": []
+        }
+    },
+    "paligemma": {
+        "positive": {
+            "correct": 100,
+            "total": 100,
+            "examples": []
+        },
+        "negative": {
+            "correct": 55,
+            "total": 100,
+            "examples": [
+                [
+                    "image_0297.png",
+                    "Is this sentence correct? The object on the right is not green. Answer yes or no.",
+                    "no"
+                ],
+                [
+                    "image_0452.png",
+                    "Is this sentence correct? The object on the right is not yellow. Answer yes or no.",
+                    "no"
+                ],
+                [
+                    "image_0470.png",
+                    "Is this sentence correct? The object on the right is not blue. Answer yes or no.",
+                    "no"
+                ],
+                [
+                    "image_0479.png",
+                    "Is this sentence correct? The object on the right is not blue. Answer yes or no.",
+                    "no"
+                ],
+                [
+                    "image_0959.png",
+                    "Is this sentence correct? The object on the right is not green. Answer yes or no.",
+                    "no"
+                ],
+                [
+                    "image_0161.png",
+                    "Is this sentence correct? The object on the right is not blue. Answer yes or no.",
+                    "no"
+                ],
+                [
+                    "image_0598.png",
+                    "Is this sentence correct? The object on the right is not green. Answer yes or no.",
+                    "no"
+                ],
+                [
+                    "image_0873.png",
+                    "Is this sentence correct? The object on the right is not green. Answer yes or no.",
+                    "no"
+                ],
+                [
+                    "image_0831.png",
+                    "Is this sentence correct? The object on the right is not blue. Answer yes or no.",
+                    "no"
+                ],
+                [
+                    "image_0263.png",
+                    "Is this sentence correct? The object on the right is not blue. Answer yes or no.",
+                    "no"
+                ],
+                [
+                    "image_0361.png",
+                    "Is this sentence correct? The object on the right is not yellow. Answer yes or no.",
+                    "no"
+                ],
+                [
+                    "image_0270.png",
+                    "Is this sentence correct? The object on the left is not blue. Answer yes or no.",
+                    "no"
+                ],
+                [
+                    "image_0652.png",
+                    "Is this sentence correct? The object on the right is not green. Answer yes or no.",
+                    "no"
+                ],
+                [
+                    "image_0451.png",
+                    "Is this sentence correct? The object on the right is not blue. Answer yes or no.",
+                    "no"
+                ],
+                [
+                    "image_0063.png",
+                    "Is this sentence correct? The object on the right is not green. Answer yes or no.",
+                    "no"
+                ],
+                [
+                    "image_0538.png",
+                    "Is this sentence correct? The object on the right is not green. Answer yes or no.",
+                    "no"
+                ],
+                [
+                    "image_0458.png",
+                    "Is this sentence correct? The object on the right is not yellow. Answer yes or no.",
+                    "no"
+                ],
+                [
+                    "image_0922.png",
+                    "Is this sentence correct? The object on the right is not green. Answer yes or no.",
+                    "no"
+                ],
+                [
+                    "image_0192.png",
+                    "Is this sentence correct? The object on the right is not yellow. Answer yes or no.",
+                    "no"
+                ],
+                [
+                    "image_0156.png",
+                    "Is this sentence correct? The object on the right is not blue. Answer yes or no.",
+                    "no"
+                ],
+                [
+                    "image_0295.png",
+                    "Is this sentence correct? The object on the left is not green. Answer yes or no.",
+                    "no"
+                ],
+                [
+                    "image_0182.png",
+                    "Is this sentence correct? The object on the right is not green. Answer yes or no.",
+                    "no"
+                ],
+                [
+                    "image_0916.png",
+                    "Is this sentence correct? The object on the left is not green. Answer yes or no.",
+                    "no"
+                ],
+                [
+                    "image_0294.png",
+                    "Is this sentence correct? The object on the left is not blue. Answer yes or no.",
+                    "no"
+                ],
+                [
+                    "image_0772.png",
+                    "Is this sentence correct? The object on the right is not blue. Answer yes or no.",
+                    "no"
+                ],
+                [
+                    "image_0777.png",
+                    "Is this sentence correct? The object on the right is not green. Answer yes or no.",
+                    "no"
+                ],
+                [
+                    "image_0610.png",
+                    "Is this sentence correct? The object on the right is not green. Answer yes or no.",
+                    "no"
+                ],
+                [
+                    "image_0131.png",
+                    "Is this sentence correct? The object on the right is not green. Answer yes or no.",
+                    "no"
+                ],
+                [
+                    "image_0797.png",
+                    "Is this sentence correct? The object on the right is not yellow. Answer yes or no.",
+                    "no"
+                ],
+                [
+                    "image_0088.png",
+                    "Is this sentence correct? The object on the right is not blue. Answer yes or no.",
+                    "no"
+                ],
+                [
+                    "image_0441.png",
+                    "Is this sentence correct? The object on the right is not yellow. Answer yes or no.",
+                    "no"
+                ],
+                [
+                    "image_0425.png",
+                    "Is this sentence correct? The object on the right is not yellow. Answer yes or no.",
+                    "no"
+                ],
+                [
+                    "image_0213.png",
+                    "Is this sentence correct? The object on the right is not yellow. Answer yes or no.",
+                    "no"
+                ],
+                [
+                    "image_0474.png",
+                    "Is this sentence correct? The object on the left is not green. Answer yes or no.",
+                    "no"
+                ],
+                [
+                    "image_0473.png",
+                    "Is this sentence correct? The object on the right is not green. Answer yes or no.",
+                    "no"
+                ],
+                [
+                    "image_0884.png",
+                    "Is this sentence correct? The object on the right is not green. Answer yes or no.",
+                    "no"
+                ],
+                [
+                    "image_0071.png",
+                    "Is this sentence correct? The object on the right is not blue. Answer yes or no.",
+                    "no"
+                ],
+                [
+                    "image_0675.png",
+                    "Is this sentence correct? The object on the right is not blue. Answer yes or no.",
+                    "no"
+                ],
+                [
+                    "image_0407.png",
+                    "Is this sentence correct? The object on the right is not yellow. Answer yes or no.",
+                    "no"
+                ],
+                [
+                    "image_0926.png",
+                    "Is this sentence correct? The object on the right is not yellow. Answer yes or no.",
+                    "no"
+                ],
+                [
+                    "image_0494.png",
+                    "Is this sentence correct? The object on the left is not blue. Answer yes or no.",
+                    "no"
+                ],
+                [
+                    "image_0402.png",
+                    "Is this sentence correct? The object on the right is not yellow. Answer yes or no.",
+                    "no"
+                ],
+                [
+                    "image_0510.png",
+                    "Is this sentence correct? The object on the right is not yellow. Answer yes or no.",
+                    "no"
+                ],
+                [
+                    "image_0961.png",
+                    "Is this sentence correct? The object on the right is not green. Answer yes or no.",
+                    "no"
+                ],
+                [
+                    "image_0054.png",
+                    "Is this sentence correct? The object on the left is not blue. Answer yes or no.",
+                    "no"
+                ]
+            ]
+        },
+        "positive_false": {
+            "correct": 100,
+            "total": 100,
+            "examples": []
+        },
+        "negative_false": {
+            "correct": 100,
+            "total": 100,
+            "examples": []
+        }
+    }
+}

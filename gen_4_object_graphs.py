@@ -3,7 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import torch
 from transformers import AutoProcessor, LlavaForConditionalGeneration, InternVLForConditionalGeneration, AutoModelForImageTextToText
-
+import argparse
 
 def load_model(model_name):
 
@@ -52,7 +52,7 @@ def load_model(model_name):
 
     return processor, model
 
-def four_position(model_name, pos, colour=None):
+def four_position(model_name, pos, ylim, colour=None):
    
     processor, model = load_model(model_name)
 
@@ -62,7 +62,7 @@ def four_position(model_name, pos, colour=None):
     item3_attn = []
     item4_attn = []
     baseline_attentions = []
-    for i in range(100):
+    for i in range(5):
         image_path = f"4_shapes_same_dataset_1000/images/image_{i:04d}.png"
         plotter = Plotter(image_path)
         top_left_colour = plotter.get_shape_by_position('top_left').colour
@@ -128,11 +128,19 @@ def four_position(model_name, pos, colour=None):
     elif model_name == 'paligemma':
         layers = list(range(26))
     plt.figure(figsize=(10, 6))
-    plt.plot(layers, avg_item1_attn, label='Top Left Shape Attention')
-    plt.plot(layers, avg_item2_attn, label='Top Right Shape Attention')
-    plt.plot(layers, avg_item3_attn, label='Bottom Left Shape Attention')
-    plt.plot(layers, avg_item4_attn, label='Bottom Right Shape Attention')
+    # plt.plot(layers, avg_item1_attn, label='Top Left Shape Attention')
+    # plt.plot(layers, avg_item2_attn, label='Top Right Shape Attention')
+    # plt.plot(layers, avg_item3_attn, label='Bottom Left Shape Attention')
+    # plt.plot(layers, avg_item4_attn, label='Bottom Right Shape Attention')
+
     plt.plot(layers, avg_baseline_attn, label='Baseline Attention', color='gray', linestyle='--')
+    # plot mentioned shape and non-mentinoed shapes (averaged together)
+
+    
+
+
+
+
     # plot confidence intervals
     # plt.fill_between(layers, avg_item1_attn - std_item1_attn, avg_item1_attn + std_item1_attn, color='blue', alpha=0.2)
     # plt.fill_between(layers, avg_item2_attn - std_item2_attn, avg_item2_attn + std_item2_attn, color='red', alpha=0.2)    
@@ -143,22 +151,26 @@ def four_position(model_name, pos, colour=None):
     plt.title('Average Attention Scores Through Layers')
     plt.legend()
     # fix y axis limit
-    plt.ylim(0, 0.004)
+    plt.ylim(0, ylim)
     #plt.ylim(0, 0.01)
     #plt.ylim(0, 0.02)
-    plt.savefig(f'4_obj_plots/{model_name}_{pos}_{colour+"_" if colour else ""}all.png')
+    plt.savefig(f'plots/4_obj_plots/{model_name}_{pos}_{colour+"_" if colour else ""}all.png')
     print(f"Processed {count} images matching criteria.")
 
 
 if __name__ == "__main__":
-    four_position('llava', 'top_left')
-    four_position('llava', 'top_right')
-    four_position('llava', 'bottom_left')
-    four_position('llava', 'bottom_right')
-    four_position('llava', 'neg_top_left')
-    four_position('llava', 'neg_top_right')
-    four_position('llava', 'neg_bottom_left')
-    four_position('llava', 'neg_bottom_right')
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--model_name', type=str, default='llava', help='Model name: llava, internvl, paligemma')
+    parser.add_argument('--ylim', type=float, default=None, help='Y-axis limits for the plot')
+    args = parser.parse_args()
+    four_position(args.model_name, 'top_left', args.ylim)
+    four_position(args.model_name, 'top_right', args.ylim)
+    four_position(args.model_name, 'bottom_left', args.ylim)
+    four_position(args.model_name, 'bottom_right', args.ylim)
+    four_position(args.model_name, 'neg_top_left', args.ylim)
+    four_position(args.model_name, 'neg_top_right', args.ylim)
+    four_position(args.model_name, 'neg_bottom_left', args.ylim)
+    four_position(args.model_name, 'neg_bottom_right', args.ylim)
     # four_position('internvl', 'top_left', 'red')
     # four_position('internvl', 'top_right', 'red')
     # four_position('internvl', 'bottom_left', 'red')

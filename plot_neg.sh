@@ -5,4 +5,4 @@
 #SBATCH --partition=gpu
 #SBATCH --gres=gpu:1
 
-python four_shapes.py
+python downstream_tasks.py

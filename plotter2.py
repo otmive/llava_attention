@@ -182,7 +182,7 @@ class Plotter:
         # print model device
         print("Model device:", next(self.model.parameters()).device)
 
-        self.outputs = self.model.generate(**self.inputs, max_new_tokens=2, do_sample=False, output_attentions=True, return_dict_in_generate=True)
+        self.outputs = self.model.generate(**self.inputs, max_new_tokens=1, do_sample=False, output_attentions=True, return_dict_in_generate=True)
         
         return self.outputs
     
@@ -256,6 +256,7 @@ class Plotter:
     
     def get_matrix_for_layer(self, layer_idx):
         layer_attns = self.outputs["attentions"][0][layer_idx].squeeze(0)
+        print(f"Layer attns for layer {layer_idx}:", layer_attns[0])
         attns_per_head = layer_attns.mean(dim=0)
         cur = attns_per_head[:-1].cpu().clone()
         # Zero out attention to first <bos> token for non-first positions
@@ -460,6 +461,7 @@ class Plotter:
     def get_baseline_attn_for_layer(self, shapes, layer_idx):
         attn = self.get_image_attention_matrix(layer_idx)
         total_attn = attn.sum().item()
+        print("Total attention:", total_attn)
         bbox_attn = 0.0
         total_bbox_tokens = 0
         for shape in shapes:

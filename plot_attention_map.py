@@ -4,8 +4,7 @@ import matplotlib.pyplot as plt
 import torch
 from transformers import AutoProcessor, LlavaForConditionalGeneration, InternVLForConditionalGeneration
 from transformers import AutoModelForImageTextToText
-
-HF_TOKEN = "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"
+import os
 
 def load_model(model_name):
 
@@ -54,11 +53,14 @@ def load_model(model_name):
 
     return processor, model
 
-model_name = "llava"
-plotter = Plotter("2d_dataset_fixed_positions_1000/images/image_0000.png")
+model_name = "internvl"
 processor, model = load_model(model_name)
-print(model)
-plotter.set_model(model, processor)
-plotter.get_outputs("The figure is yellow")
-print(plotter.print_output())
-plotter.plot_attention_through_layers(save_path=f'{model_name}_layer_attention_0000.png')
+images_with_diff_in_layers = []
+image_total_token_indices = []
+for image_path in os.listdir("2d_dataset_fixed_positions/images"):
+    plotter = Plotter(f"2d_dataset_fixed_positions/images/{image_path}")
+    plotter.set_model(model, processor)
+    plotter.get_outputs("The figure is yellow")
+    # check all layers have same sink token 
+    # print whether sink token indices are the same for all layers
+    plotter.plot_image_attention(save_path=f"internvl_test/{image_path}_attention_map.png")

@@ -1,0 +1,13 @@
+Model,Question Type,Average Accuracy,Std Accuracy
+llava,positive,90.0,0.0
+llava,negative,11.0,0.0
+llava,positive_false,17.0,0.0
+llava,negative_false,91.0,0.0
+internvl,positive,43.0,0.0
+internvl,negative,41.0,0.0
+internvl,positive_false,98.0,0.0
+internvl,negative_false,91.0,0.0
+paligemma,positive,93.0,0.0
+paligemma,negative,19.0,0.0
+paligemma,positive_false,38.0,0.0
+paligemma,negative_false,100.0,0.0
