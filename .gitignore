@@ -12,3 +12,4 @@ whatsup/
 plots/
 *.png
 bar_plots
+*.sh
