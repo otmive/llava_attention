@@ -5,4 +5,6 @@
 #SBATCH --partition=gpu
 #SBATCH --gres=gpu:1
 
-python test_2_shapes.py
+# python test_2_shapes.py
+
+python scripts/visualise_bbox.py
