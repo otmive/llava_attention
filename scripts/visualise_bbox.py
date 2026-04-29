@@ -1,5 +1,6 @@
 from plotter import Plotter
 from functions import load_model
+import argparse
 
 
 def visualise_bbox(image_path, model_name):
@@ -16,6 +17,10 @@ def visualise_bbox(image_path, model_name):
     plotter.plot_bbox_on_attention_map(save_path="bbox_map.png")
 
 if __name__ == "__main__":
-    image_path = "2d_dataset_fixed_positions_1000/images/image_0000.png"
-    model_name = "paligemma"
-    visualise_bbox(image_path, model_name)
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--image_path", type=str, default="binary/images/image_0000.png")
+    parser.add_argument("--model_name", type=str, default="llava")
+
+    args = parser.parse_args()
+
+    visualise_bbox(args.image_path, args.model_name)
