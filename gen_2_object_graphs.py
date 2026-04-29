@@ -104,6 +104,17 @@ def four_position(model_name, image_folder, pos, colour=None):
     ci1 = 1.96*(std_item1_attn/np.sqrt(len(avg_item1_attn)))
     ci2 = 1.96*(std_item2_attn/np.sqrt(len(avg_item2_attn)))
 
+
+    if image_folder == "2d_dataset_fixed_positions_1000":
+        folder_name = "2_obj"
+    elif image_folder == "whatsup":
+        folder_name = "whatsup"
+    else: folder_name = "4_obj"
+    ## save the data
+    np.save(f"data_saves/left_right_data/{model_name}_{folder_name}_left_item_attn_{pos}.npy", item1_attn)
+    np.save(f"data_saves/left_right_data/{model_name}_{folder_name}_right_item_attn_{pos}.npy", item2_attn)
+
+
     if model_name == 'llava':
         num_layers = 32
     elif model_name == 'internvl':
@@ -196,20 +207,58 @@ def run_model_analysis(model_name, img_folder, positions):
     plt.close(fig)
     print(f"--- Finished {model_name}. Plot saved as {output_filename} ---")
 
+def plot_graphs(model_name):
+    positions = ["left", "neg_left", "right", "neg_right"]
+    
+    title_map = {
+        "left": "Affirmative Left",
+        "right": "Affirmative Right",
+        "neg_left": "Negated Left",
+        "neg_right": "Negated Right"
+    }
+    # 3. Create the figure with 4 subplots
+    fig, axes = plt.subplots(1, 4, figsize=(16, 4), sharey=True)
+    fig.suptitle(f"{model_name.upper()}", fontsize=16, fontweight='bold')
+    
+    all_values = []
+    # load data from data_saves/left_right_data/
+    for i, pos in enumerate(positions):
+        item1_attn = np.load(f"data_saves/left_right_data/{model_name}_2_obj_left_item_attn_{pos}.npy")
+        item2_attn = np.load(f"data_saves/left_right_data/{model_name}_2_obj_right_item_attn_{pos}.npy")
+
+        avg_item1_attn = np.mean(item1_attn, axis=0)
+        avg_item2_attn = np.mean(item2_attn, axis=0)
+        ci1 = 1.96*(np.std(item1_attn, axis=0, ddof=1) / np.sqrt(len(item1_attn)))
+        ci2 = 1.96*(np.std(item2_attn, axis=0, ddof=1) / np.sqrt(len(item2_attn)))
+
+        all_values.extend(avg_item1_attn + ci1)
+        all_values.extend(avg_item2_attn + ci2)
+
+        x = list(range(len(avg_item1_attn)))
+        axes[i].plot(avg_item1_attn, label='Left Shape', linewidth=2, marker='o', markersize=3)
+        axes[i].plot(avg_item2_attn, label='Right Shape', linewidth=2, marker='x', markersize=3)    
+        axes[i].fill_between(x, avg_item1_attn - ci1, avg_item1_attn + ci1, alpha=0.25)
+        axes[i].fill_between(x, avg_item2_attn - ci2, avg_item2_attn + ci2, alpha=0.25) 
+        axes[i].set_title(f"{title_map.get(pos, pos)}", fontsize=14)
+        axes[i].set_xlabel("Layer", fontsize=16)
+        # make tick label font size bigger
+        axes[i].tick_params(axis='both', which='major', labelsize=16)
+        axes[i].set_ylim(0, max(all_values)*1.1)  # Apply the calculated max limit  
+        if i == 0:
+            axes[i].set_ylabel("Attention", fontsize=16)
+        if i == 3:
+            axes[i].legend(fontsize=16)
+        axes[i].grid(True, linestyle='--', alpha=0.4)   
+    plt.tight_layout(rect=[0, 0.03, 1, 0.95])
+    output_filename = f"plots/2d_datasets_2/{model_name}_position_graphs_new.png"
+    plt.savefig(output_filename)
+    plt.close(fig)
+    print(f"Plot saved as {output_filename}")
+
+
 if __name__ == "__main__":
     img_folder = "2d_dataset_fixed_positions_1000"
-    #img_folder = "whatsup"
-    models = ["llava", "internvl", "paligemma"]
-    positions = ["left", "neg_left", "right", "neg_right"]
-
-    # Use 'spawn' for cleaner GPU memory management if on Linux/Mac
-    # mp.set_start_method('spawn', force=True)
-
-    for model in models:
-        # We start a fresh process for each model
-        p = mp.Process(target=run_model_analysis, args=(model, img_folder, positions))
-        p.start()
-        
-        # p.join() is critical: it makes the script wait for the process to die 
-        # (and free VRAM) before starting the next model.
-        p.join()
+    model_names = ['paligemma', 'internvl', 'llava']
+    
+    for model_name in model_names:
+        plot_graphs(model_name)

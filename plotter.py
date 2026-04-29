@@ -533,7 +533,6 @@ class Plotter:
             scale_x = attn_matrix.shape[0] / self.img.size[0]
             scale_y = attn_matrix.shape[1] / self.img.size[1]
 
-            print("scale_x:", scale_x, "scale_y:", scale_y)
 
             bbox_heatmap = [x1 * scale_x, y1 * scale_y, x2 * scale_x, y2 * scale_y]
             x1, y1, x2, y2 = bbox_heatmap
@@ -613,7 +612,6 @@ class Plotter:
         # calculate number of tokens in the bounding box
 
         bbox_tokens = (x2 - x1 + 1) * (y2 - y1 + 1)
-        print("number tokens in bbox", bbox_tokens)
         # plot attention heatmap but only for values within the bounding box
         return attn[y1:y2+1, x1:x2+1].sum().item()/bbox_tokens
         
@@ -635,7 +633,6 @@ class Plotter:
             bbox_tokens = (x2 - x1 + 1) * (y2 - y1 + 1)
             total_bbox_tokens += bbox_tokens
             bbox_attn += attn[y1:y2+1, x1:x2+1].sum().item()
-        print("Baseline image tokens: ", attn.size - total_bbox_tokens)
         baseline_attn = (total_attn - bbox_attn) / (attn.size - total_bbox_tokens)
         return baseline_attn
     

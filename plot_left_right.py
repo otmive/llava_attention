@@ -62,13 +62,13 @@ def plot_left_right(model_name, image_path):
     plotter.set_model(model, processor)
     left_colour = plotter.get_left_shapes()[0].colour
     right_colour = plotter.get_right_shapes()[0].colour
-    plotter.get_outputs(f"The object is a {left_colour}")
+    plotter.get_outputs(f"The object is {left_colour}")
     l_bbox_attentions, l_baseline_attn = plotter.plot_attention_through_layers()
-    plotter.get_outputs(f"The object is a {right_colour}")
+    plotter.get_outputs(f"The object is {right_colour}")
     r_bbox_attentions, r_baseline_attn = plotter.plot_attention_through_layers()
-    plotter.get_outputs(f"The object is not a {left_colour}")
+    plotter.get_outputs(f"The object is not {left_colour}")
     ln_bbox_attentions, ln_baseline_attn = plotter.plot_attention_through_layers()
-    plotter.get_outputs(f"The object is not a {right_colour}")
+    plotter.get_outputs(f"The object is not {right_colour}")
     rn_bbox_attentions, rn_baseline_attn = plotter.plot_attention_through_layers()
 
     # get max value of both left and right attentions
@@ -99,7 +99,7 @@ def plot_left_right(model_name, image_path):
     plt.legend()
     # fix y axis limit
     plt.ylim(0, overall_max * 1.1)  
-    plt.savefig(f'plots/single_image/{model_name}_left_{image_path.split("/")[-1].split(".")[0]}_attention.png')
+    plt.savefig(f'plots/single_image/test/{model_name}_left_{image_path.split("/")[-1].split(".")[0]}_attention.png')
 
     # plot the attentions for the right colour in a plot
     plt.figure(figsize=(10, 6))
@@ -112,7 +112,7 @@ def plot_left_right(model_name, image_path):
     plt.legend()
     # fix y axis limit
     plt.ylim(0, overall_max * 1.1)  
-    plt.savefig(f'plots/single_image/{model_name}_right_{image_path.split("/")[-1].split(".")[0]}_attention.png')
+    plt.savefig(f'plots/single_image/test/{model_name}_right_{image_path.split("/")[-1].split(".")[0]}_attention.png')
     
     # plot negated versions
     plt.figure(figsize=(10, 6))
@@ -125,7 +125,7 @@ def plot_left_right(model_name, image_path):
     plt.legend()
     # fix y axis limit
     plt.ylim(0, overall_max * 1.1)  
-    plt.savefig(f'plots/single_image/{model_name}_neg_left_{image_path.split("/")[-1].split(".")[0]}_attention.png')
+    plt.savefig(f'plots/single_image/test/{model_name}_neg_left_{image_path.split("/")[-1].split(".")[0]}_attention.png')
 
     # plot the attentions for the right colour in a plot
     plt.figure(figsize=(10, 6))
@@ -138,7 +138,7 @@ def plot_left_right(model_name, image_path):
     plt.legend()
     # fix y axis limit
     plt.ylim(0, overall_max * 1.1)  
-    plt.savefig(f'plots/single_image/{model_name}_neg_right_{image_path.split("/")[-1].split(".")[0]}_attention.png')
+    plt.savefig(f'plots/single_image/test/{model_name}_neg_right_{image_path.split("/")[-1].split(".")[0]}_attention.png')
     # free up memory
     del model
     del processor
@@ -153,7 +153,7 @@ def plot_left_right(model_name, image_path):
 
 if __name__ == "__main__":
     image_path = "2d_dataset_fixed_positions_1000/images/image_0000.png"
-    model_names = ["paligemma"]
+    model_names = ["llava"]
     processes = []
     for model_name in model_names:
         p = mp.Process(target=plot_left_right, args=(model_name, image_path))

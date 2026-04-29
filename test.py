@@ -1,9 +1,12 @@
 from plotter import Plotter
+import torch 
+import os 
+from transformers import AutoProcessor, AutoModelForImageTextToText, InternVLForConditionalGeneration, LlavaForConditionalGeneration
 import numpy as np
 import matplotlib.pyplot as plt
-import torch
-from transformers import AutoProcessor, LlavaForConditionalGeneration, InternVLForConditionalGeneration
-from PIL import Image
+import multiprocessing as mp
+import gc
+from matplotlib import rcParams
 
 def load_model(model_name):
 
@@ -18,7 +21,7 @@ def load_model(model_name):
             print("Loading model and processor...")
             processor = AutoProcessor.from_pretrained(model_id)
             model = InternVLForConditionalGeneration.from_pretrained(
-                model_id, torch_dtype=torch.float16).to(device)
+                model_id, torch_dtype=torch.float16, attn_implementation="eager").to(device)
             _loaded_models[model_id] = (processor, model)
         else:
             print("Reusing cached model and processor.")
@@ -30,28 +33,35 @@ def load_model(model_name):
             print("Loading model and processor...")
             processor = AutoProcessor.from_pretrained(model_id)
             model = LlavaForConditionalGeneration.from_pretrained(
-                model_id, torch_dtype=torch.float16).to(device)
+                model_id, torch_dtype=torch.float16, attn_implementation="eager").to(device)
             _loaded_models[model_id] = (processor, model)
         else:
             print("Reusing cached model and processor.")
             processor, model = _loaded_models[model_id]
 
+    elif model_name == "paligemma":
+
+        model_id = "google/paligemma2-3b-mix-224"
+        if model_id not in _loaded_models:
+            print("Loading model and processor...")
+            processor = AutoProcessor.from_pretrained(model_id)
+            model = AutoModelForImageTextToText.from_pretrained(
+                model_id, torch_dtype=torch.float16, attn_implementation="eager").to(device)
+            _loaded_models[model_id] = (processor, model)
+        else:
+            print("Reusing cached model and processor.")
+            processor, model = _loaded_models[model_id]
+
+
     return processor, model
 
+test_img = "2d_dataset_fixed_positions_1000/images/image_0000.png"
 
-processor, model = load_model("llava")
-image_path = "2d_dataset_fixed_positions_1000/images/image_0000.png"
-img = Image.open(image_path).convert("RGB")
-print("image size:", img.size)
-plotter = Plotter(image_path)
+plotter = Plotter(test_img)
+left_colour = plotter.get_left_shapes()[0].colour
+processor, model = load_model("paligemma")
 plotter.set_model(model, processor)
-plotter.get_outputs("The figure is green")
-print(plotter.print_output())
-print(plotter.outputs["attentions"][0][0].shape) 
-# left_colour = plotter.get_left_shapes()[0].colour
-# right_colour = plotter.get_right_shapes()[0].colour
-# plotter.set_model(model, processor)
-# plotter.get_outputs(f"The figure is {left_colour}")
-# plotter.plot_bbox_on_attention_map("test_llava_map.png")
-
-
+plotter.get_outputs(f"The figure is {left_colour}.")
+num_layers = len(plotter.outputs["attentions"][0])
+num_heads = len(plotter.outputs["attentions"][0][0][0])
+print(f"Number of layers: {num_layers}, Number of heads: {num_heads}")

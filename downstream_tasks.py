@@ -420,6 +420,11 @@ def print_results(results_type):
 def print_overall_pos_v_neg():
     import json
 
+    overall_restuls = {
+        "llava": {"positive": [], "negative": []},
+        "internvl": {"positive": [], "negative": []},
+        "paligemma": {"positive": [], "negative": []},
+    }
 
     for file in ["2_object_results.json", "whatsup_results.json", "4_object_results.json"]:
         print(f"\nResults for {file}:")
@@ -436,8 +441,10 @@ def print_overall_pos_v_neg():
                         accuracy = (result["correct"] / result["total"] * 100) if result["total"] > 0 else 0
                         if question_type in ["positive", "positive_false"]:
                             pos_accuracies.append(accuracy)
+                            overall_restuls[model]["positive"].append(accuracy)
                         else:
                             neg_accuracies.append(accuracy)
+                            overall_restuls[model]["negative"].append(accuracy)
                 avg_pos_accuracy = np.mean(pos_accuracies)
                 avg_neg_accuracy = np.mean(neg_accuracies)
 
@@ -451,9 +458,179 @@ def print_overall_pos_v_neg():
             print(f"  Average Positive Accuracy across datasets: {np.mean(acc['positive']):.2f}% (±{np.std(acc['positive']):.2f}%)")
             print(f"  Average Negative Accuracy across datasets: {np.mean(acc['negative']):.2f}% (±{np.std(acc['negative']):.2f}%)")
 
+
+    print("\nOverall Results Across All Datasets:")
+    for model, acc in overall_restuls.items():
+        print(f"Model: {model}")
+        print(f"  Overall Positive Accuracy: {np.mean(acc['positive']):.2f}% (±{np.std(acc['positive']):.2f}%)")
+        print(f"  Overall Negative Accuracy: {np.mean(acc['negative']):.2f}% (±{np.std(acc['negative']):.2f}%)")
+
+
+def print_breakdown():
+    print("In print breakdown")
+    import json
+    with open("2_object_results.json", "r") as f:
+        all_results_2_obj = json.load(f)
+    with open("whatsup_results.json", "r") as f:
+        all_results_whatsup = json.load(f)
+    with open("4_object_results.json", "r") as f:
+        all_results_4_obj = json.load(f)
+
+
+    overall_results = {
+        "llava": {"positive": [], "negative": []},
+        "internvl": {"positive": [], "negative": []},
+        "paligemma": {"positive": [], "negative": []},
+    }
+
+    model_total_pos_accuracies = []
+    model_total_neg_accuracies = []
+    model_total_pos_false_accuracies = []
+    model_total_neg_false_accuracies = []
+    llava_results_pos = []
+    llava_results_neg = []
+    llava_results_pos_false = []
+    llava_results_neg_false = []
+    internvl_results_pos = []
+    internvl_results_neg = []
+    internvl_results_pos_false = []
+    internvl_results_neg_false = []
+    paligemma_results_pos = []
+    paligemma_results_neg = []
+    paligemma_results_pos_false = []
+    paligemma_results_neg_false = []
+    for filename in ["2_object_results.json", "whatsup_results.json", "4_object_results.json"]:
+        with open(filename, "r") as f:
+            results_loaded = json.load(f)
+        dataset_accuracy_pos = []
+        dataset_accuracy_neg = []
+        for model in ["llava", "internvl", "paligemma"]:
+            print("Model: ", model)
+            model_level_pos_accuracies = []
+            model_level_neg_accuracies = []
+            model_level_pos_false_accuracies = []
+            model_level_neg_false_accuracies = []
+            # find result for each prompt and seed, print out then print average for prompt then print total average
+            for ptype in sorted(results_loaded.keys()):
+                promt_type_results_pos = []
+                prompt_type_results_neg = []
+                prompt_type_results_pos_false = []
+                prompt_type_results_neg_false = []
+                for seed in [0, 42, 100]:
+                    result = results_loaded[ptype][str(seed)][model]
+                    seed_level_accuracy_pos = []
+                    seed_level_accuracy_neg = []
+                    seed_level_accuracy_pos_false = []
+                    seed_level_accuracy_neg_false = []
+                    for question_type in ["positive", "negative","positive_false", "negative_false"]:
+                        accuracy = (result[question_type]["correct"] / result[question_type]["total"] * 100) if result[question_type]["total"] > 0 else 0
+                        #print("                    Prompt type: ", ptype, "seed: ", seed, "question type: ", question_type, "accuracy: ", accuracy)
+                        if question_type == "positive":
+                            overall_results[model]["positive"].append(accuracy)
+                            seed_level_accuracy_pos.append(accuracy)
+                            promt_type_results_pos.append(accuracy)
+                            model_level_pos_accuracies.append(accuracy)
+                            if model == "llava":
+                                llava_results_pos.append(accuracy)
+                            elif model == "internvl":
+                                internvl_results_pos.append(accuracy)
+                            elif model == "paligemma":
+                                paligemma_results_pos.append(accuracy)
+                        elif question_type == "negative":
+                            overall_results[model]["negative"].append(accuracy)
+                            seed_level_accuracy_neg.append(accuracy)
+                            prompt_type_results_neg.append(accuracy)
+                            model_level_neg_accuracies.append(accuracy)
+                            if model == "llava":
+                                llava_results_neg.append(accuracy)
+                            elif model == "internvl":
+                                internvl_results_neg.append(accuracy)
+                            elif model == "paligemma":
+                                paligemma_results_neg.append(accuracy)
+                        elif question_type == "positive_false":
+                            model_level_pos_false_accuracies.append(accuracy)
+                            seed_level_accuracy_pos_false.append(accuracy)
+                            prompt_type_results_pos_false.append(accuracy)
+                            if model == "llava":
+                                llava_results_pos_false.append(accuracy)
+                            elif model == "internvl":
+                                internvl_results_pos_false.append(accuracy)
+                            elif model == "paligemma":
+                                paligemma_results_pos_false.append(accuracy)
+                        elif question_type == "negative_false":
+                            model_level_neg_false_accuracies.append(accuracy)
+                            seed_level_accuracy_neg_false.append(accuracy)
+                            prompt_type_results_neg_false.append(accuracy)
+                            if model == "llava":
+                                llava_results_neg_false.append(accuracy)
+                            elif model == "internvl":
+                                internvl_results_neg_false.append(accuracy)
+                            elif model == "paligemma":
+                                paligemma_results_neg_false.append(accuracy)
+
+                    #print("Model: ", model, ", Prompt type: ", ptype, ", seed: ", seed, ", positive accuracy: ", np.mean(seed_level_accuracy_pos), "std: ", np.std(seed_level_accuracy_pos), "negative accuracy: ", np.mean(seed_level_accuracy_neg), "std: ", np.std   (seed_level_accuracy_neg))
+                    #print(f"Model: {model}, Prompt type: {ptype}, seed: {seed}, positive false accuracy: {np.mean(seed_level_accuracy_pos_false):.2f}% (±{np.std(seed_level_accuracy_pos_false):.2f}%)")
+                print("Prompt type: ", ptype, ", positive accuracy: ", np.mean(promt_type_results_pos), "std: ", np.std(promt_type_results_pos), "negative accuracy: ", np.mean(prompt_type_results_neg), "std: ", np.std(prompt_type_results_neg))
+                print("Prompt type: ", ptype, ", positive false accuracy: ", np.mean(prompt_type_results_pos_false), "std: ", np.std(prompt_type_results_pos_false), "negative false accuracy: ", np.mean(prompt_type_results_neg_false), "std: ", np.std(prompt_type_results_neg_false))
+            print(f"dataset{filename}, {model} positive accuracy: {np.mean(model_level_pos_accuracies):.2f}% (±{np.std(model_level_pos_accuracies):.2f}%)")
+            print(f"dataset{filename} {model} negative accuracy: {np.mean(model_level_neg_accuracies):.2f}% (±{np.std(model_level_neg_accuracies):.2f}%)")  
+            print(f"dataset{filename}, {model} positive false accuracy: {np.mean(model_level_pos_false_accuracies):.2f}% (±{np.std(model_level_pos_false_accuracies):.2f}%)")
+            print(f"dataset{filename} {model} negative false accuracy: {np.mean(model_level_neg_false_accuracies):.2f}% (±{np.std(model_level_neg_false_accuracies):.2f}%)")    
+
+    print("Llava overall positive accuracy: ", np.mean(llava_results_pos), "std: ", np.std(llava_results_pos))
+    print("Llava overall negative accuracy: ", np.mean(llava_results_neg), "std: ", np.std(llava_results_neg))
+    print("InternVL overall positive accuracy: ", np.mean(internvl_results_pos), "std: ", np.std(internvl_results_pos))
+    print("InternVL overall negative accuracy: ", np.mean(internvl_results_neg), "std: ", np.std(internvl_results_neg))
+    print("Paligemma overall positive accuracy: ", np.mean(paligemma_results_pos), "std: ", np.std(paligemma_results_pos))
+    print("Paligemma overall negative accuracy: ", np.mean(paligemma_results_neg), "std: ", np.std(paligemma_results_neg))
+    print("Llava overall positive false accuracy: ", np.mean(llava_results_pos_false), "std: ", np.std(llava_results_pos_false))
+    print("Llava overall negative false accuracy: ", np.mean(llava_results_neg_false), "std: ", np.std(llava_results_neg_false))
+    print("InternVL overall positive false accuracy: ", np.mean(internvl_results_pos_false), "std: ", np.std(internvl_results_pos_false))
+    print("InternVL overall negative false accuracy: ", np.mean(internvl_results_neg_false), "std: ", np.std(internvl_results_neg_false))
+    print("Paligemma overall positive false accuracy: ", np.mean(paligemma_results_pos_false), "std: ", np.std(paligemma_results_pos_false))
+    print("Paligemma overall negative false accuracy: ", np.mean(paligemma_results_neg_false), "std: ", np.std(paligemma_results_neg_false))
+
+    print("=======================")
+    print("Overall positive accuracy llava:", (np.mean(llava_results_pos)+np.mean(llava_results_pos_false))/2)
+    print("Overall negative accuracy llava:", (np.mean(llava_results_neg)+np.mean(llava_results_neg_false))/2)
+    print("Overall positive accuracy internvl:", (np.mean(internvl_results_pos)+np.mean(internvl_results_pos_false))/2)
+    print("Overall negative accuracy internvl:", (  np.mean(internvl_results_neg)+np.mean(internvl_results_neg_false))/2)
+    print("Overall positive accuracy paligemma:", (np.mean(paligemma_results_pos)+np.mean(paligemma_results_pos_false))/2)
+    print("Overall negative accuracy paligemma:", (np.mean(paligemma_results_neg)+np.mean(paligemma_results_neg_false))/2)
+
+
+def print_dataset_results_breakdown():
+    import json
+    for filename in ["2_object_results.json", "whatsup_results.json", "4_object_results.json"]:
+        with open(filename, "r") as f:
+            results_loaded = json.load(f)
+        dataset_accuracy_pos = []
+        dataset_accuracy_neg = []
+        for model in ["llava", "internvl", "paligemma"]:
+            print("Model: ", model)
+            model_level_pos_accuracies = []
+            model_level_neg_accuracies = []
+            # find result for each prompt and seed, print out then print average for prompt then print total average
+            for ptype in sorted(results_loaded.keys()):
+                promt_type_results_pos = []
+                prompt_type_results_neg = []
+                for seed in [0, 42, 100]:
+                    result = results_loaded[ptype][str(seed)][model]
+                    seed_level_accuracy_pos = []
+                    seed_level_accuracy_neg = []
+                    for question_type in ["positive", "negative","positive_false", "negative_false"]:
+                        accuracy = (result[question_type]["correct"] / result[question_type]["total"] * 100) if result[question_type]["total"] > 0 else 0
+                        print("                    Prompt type: ", ptype, "seed: ", seed, "question type: ", question_type, "accuracy: ", accuracy)
+                        if question_type in ["positive", "positive_false"]:
+                            model_level_pos_accuracies.append(accuracy)
+                        else:
+                            model_level_neg_accuracies.append(accuracy)
+
+            print("dataset: ", filename, ", model: ", model, ", positive accuracy: ", np.mean(model_level_pos_accuracies), "std: ", np.std(model_level_pos_accuracies), "negative accuracy: ", np.mean(model_level_neg_accuracies), "std: ", np.std(model_level_neg_accuracies))
+
 if __name__ == "__main__":
     #run_whatsup_results()
     #run_2_object_results()
     #run_4_object_results()
     #get_2_object_accuracy("llava", "whatsup", 42, 0)
-    print_overall_pos_v_neg()
+    print_breakdown()

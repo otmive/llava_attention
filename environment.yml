@@ -269,6 +269,7 @@ dependencies:
   - pandas=2.3.1=py310h0158d43_0
   - pandocfilters=1.5.0=pyhd8ed1ab_0
   - parso=0.8.4=pyhd8ed1ab_1
+  - patsy=1.0.2=pyhcf101f3_0
   - pcre2=10.45=hc749103_0
   - pexpect=4.9.0=pyhd8ed1ab_1
   - pickleshare=0.7.5=pyhd8ed1ab_1004
@@ -319,6 +320,9 @@ dependencies:
   - rpds-py=0.26.0=py310hbcd0ec0_0
   - s2n=1.5.22=h96f233e_0
   - safetensors=0.5.3=py310h505e2c1_0
+  - scipy=1.15.2=py310h1d65ade_0
+  - seaborn=0.13.2=hd8ed1ab_3
+  - seaborn-base=0.13.2=pyhd8ed1ab_3
   - send2trash=1.8.3=pyh0d859eb_1
   - setuptools=80.9.0=pyhff2d567_0
   - six=1.17.0=pyhe01879c_1
@@ -326,6 +330,7 @@ dependencies:
   - sniffio=1.3.1=pyhd8ed1ab_1
   - soupsieve=2.7=pyhd8ed1ab_0
   - stack_data=0.6.3=pyhd8ed1ab_1
+  - statsmodels=0.14.6=py310hf779ad0_0
   - svt-av1=1.4.1=hcb278e6_0
   - sympy=1.14.0=pyh2585a3b_105
   - tbb=2021.13.0=hceb3a55_1
@@ -395,6 +400,7 @@ dependencies:
     - qwen-vl-utils==0.0.14
     - scikit-learn==1.7.2
     - tiktoken==0.12.0
+    - torchvision==0.24.1
     - transformers-stream-generator==0.0.5
 
 prefix: "/mnt/shared/home/ep16475/.local/share/mamba/envs/llava-att"
