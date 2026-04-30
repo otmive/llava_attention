@@ -5,14 +5,14 @@ import torch
 import gc
 import multiprocessing as mp
 from plotter import Plotter
-
+import argparse
 
 
 
 def generate_bar_graphs_all_models_ci(save_dir):
 
     model_names = ['paligemma', 'internvl', 'llava']
-    dataset_types = ["2_obj", "4_obj", "whatsup"]
+    dataset_types = ["binary", "4_obj", "whatsup"]
     dataset_labels = ["Bin.", "Mul.", "What's Up"]
     
     color_mentioned = '#2c7fb8'     
@@ -35,9 +35,6 @@ def generate_bar_graphs_all_models_ci(save_dir):
         dataset_tick_positions = []
 
         for j, dataset_type in enumerate(dataset_types):
-            # --- Data Loading ---
-            if dataset_type =="4_obj":
-                save_dir ="data_saves_all"
             m_pos = np.mean(np.load(f"{save_dir}/{model_name}_{dataset_type}_mentioned_attn.npy"), axis=0)
             m_neg = np.mean(np.load(f"{save_dir}/{model_name}_{dataset_type}_neg_mentioned_attn.npy"), axis=0)
             nm_pos = np.load(f"{save_dir}/{model_name}_{dataset_type}_non_mentioned_attn.npy")
@@ -200,4 +197,25 @@ def plot_left_right(model_name, image_path):
     print("Finished plotting for ", model_name)
 
 if __name__ == "__main__":
-  plot_left_right("llava", "binary/images/image_0000.png")
+    parser = argparse.ArgumentParser()
+
+    parser.add_argument(
+        "--image_path", 
+        type=str, 
+        default="binary/images/image_0000.png", 
+        help="Image path to plot layer-wise attention for a single image"
+    )
+    parser.add_argument(
+        "--model", 
+        type=str, 
+        default="llava", 
+        help="Which model to plot for"
+    )
+
+    args = parser.parse_args()
+    plot_left_right(args.model, args.image_path)
+
+    generate_bar_graphs_all_models_ci("data_saves")
+
+
+
