@@ -12,7 +12,7 @@ import argparse
 def generate_bar_graphs_all_models_ci(save_dir):
 
     model_names = ['paligemma', 'internvl', 'llava']
-    dataset_types = ["binary", "4_obj", "whatsup"]
+    dataset_types = ["binary", "multary", "whatsup"]
     dataset_labels = ["Bin.", "Mul.", "What's Up"]
     
     color_mentioned = '#2c7fb8'     
@@ -22,7 +22,6 @@ def generate_bar_graphs_all_models_ci(save_dir):
     CI_Z = 1.96  # 95% confidence interval
 
     def mean_and_ci(arr):
-        """Return (mean, half-width CI) for a 1D array."""
         n = len(arr)
         se = np.std(arr, ddof=1) / np.sqrt(n)
         return arr.mean(), CI_Z * se
@@ -47,7 +46,6 @@ def generate_bar_graphs_all_models_ci(save_dir):
                 nm_pos = np.mean(nm_pos, axis=(0, 1))
                 nm_neg = np.mean(nm_neg, axis=(0, 1))
 
-            # --- Compute means + CIs from the final 1D arrays ---
             means_cis = [mean_and_ci(arr.flatten()) for arr in [m_pos, m_neg, nm_pos, nm_neg]]
             vals  = [mc[0] for mc in means_cis]
             yerrs = [mc[1] for mc in means_cis]
@@ -56,7 +54,6 @@ def generate_bar_graphs_all_models_ci(save_dir):
             center = base_x + (1.5 * bar_width)
             dataset_tick_positions.append(center)
 
-            # --- Plotting ---
             bar_configs = [
                 (0, color_mentioned,     1.0,  ''),
                 (1, color_mentioned,     0.7, '////'),
@@ -82,10 +79,9 @@ def generate_bar_graphs_all_models_ci(save_dir):
                     elinewidth=1.0,
                     capsize=3,
                     capthick=1.0,
-                    zorder=5              # draw on top of bars
+                    zorder=5             
                 )
 
-        # --- Subplot Styling ---
         ax.spines['top'].set_visible(False) 
         ax.spines['right'].set_visible(False)
         ax.yaxis.grid(True, linestyle='--', alpha=0.6)
@@ -196,6 +192,97 @@ def plot_left_right(model_name, image_path):
     torch.cuda.empty_cache()
     print("Finished plotting for ", model_name)
 
+def generate_layerwise(data_type, save_dir):
+        fig, axs = plt.subplots(2, 3, figsize=(21, 8))
+        if data_type == "binary":
+            data_name = "Binary"
+        elif data_type == "multary":
+            data_name = "Multary"
+        else:
+            data_name = "What's Up"
+        # add title to entire figure
+        fig.suptitle(f"{data_name}", fontsize=20, fontweight='bold')#, y=1.02
+        plt.style.use('tableau-colorblind10') # Good for accessibility
+        plt.rcParams['font.family'] = 'sans-serif'
+        models = ["paligemma", "internvl", "llava"]
+
+        # Modern color palette
+        color_m = '#2c7fb8'  # Focused Blue
+        color_nm = '#f03b20' # Focused Red/Orange
+        color_base = '#636363' # Neutral Grey
+
+        for i, model_name in enumerate(models):
+
+            max_val = 0
+            
+
+            for row, condition in enumerate(["pos", "neg"]):
+
+                pretty_name = f"{model_name.capitalize()} - {'Affirmative' if condition == 'pos' else 'Negated'} " 
+                neg_val = "neg_" if condition == "neg" else ""
+                mentioned_attn = np.load(f"{save_dir}/{model_name}_{data_type}_{neg_val}mentioned_attn.npy")
+                not_mentioned_attn = np.load(f"{save_dir}/{model_name}_{data_type}_{neg_val}non_mentioned_attn.npy")
+                if data_type == "multary":
+                    avg_m = np.mean(mentioned_attn, axis=0)
+                    print(avg_m.shape)
+                    avg_nm = np.mean(not_mentioned_attn, axis=(0,1))
+                    ci_m = np.std(mentioned_attn, axis=(0)) / np.sqrt(len(mentioned_attn)) * 1.96
+                    ci_nm = np.std(not_mentioned_attn, axis=(0,1)) / np.sqrt(len(not_mentioned_attn)) * 1.96
+                else:   
+                
+                    avg_m = np.mean(mentioned_attn, axis=0)
+                    print(f"{save_dir}/{model_name}_{data_type}_{neg_val}mentioned_attn.npy")
+                    print(avg_m.shape)
+                    avg_nm = np.mean(not_mentioned_attn, axis=0)
+                    ci_m = np.std(mentioned_attn, axis=0) / np.sqrt(len(mentioned_attn)) * 1.96
+                    ci_nm = np.std(not_mentioned_attn, axis=0) / np.sqrt(len(not_mentioned_attn)) * 1.96
+                ax = axs[row, i]
+                x = list(range(len(avg_m)))
+                
+                max_val = max(np.max(avg_m + ci_m), np.max(avg_nm + ci_nm), max_val)
+                # --- Plotting ---
+                # # Baseline first so it stays in the background
+                # if plot_baseline:
+                #     ax.plot(x, baseline, label='Baseline', color=color_base, linestyle='--', alpha=0.8, linewidth=1.5)
+                
+                # Not Mentioned
+                ax.plot(x, avg_nm, label='Alternative', color=color_nm, linewidth=2.5, zorder=2)
+                ax.fill_between(x, avg_nm - ci_nm, avg_nm + ci_nm, color=color_nm, alpha=0.15)
+                
+                # Mentioned (Z-order higher to stand out)
+                ax.plot(x, avg_m, label='Mentioned', color=color_m, linewidth=2.5, zorder=3)
+                ax.fill_between(x, avg_m - ci_m, avg_m + ci_m, color=color_m, alpha=0.15)
+
+                # --- Formatting ---
+                # Titles only on the top row
+                ax.set_title(pretty_name, fontsize=16, fontweight='bold', pad=10)
+                
+                # Row labels (Y-axis labels)
+                ax.set_ylabel("Attention", fontsize=16, fontweight='normal')
+
+                    
+                # Clean up Spines (The "Despine" look)
+                ax.spines['top'].set_visible(False)
+                ax.spines['right'].set_visible(False)
+                ax.grid(True, axis='y', linestyle=':', alpha=0.7)
+                
+                # Limits and Ticks
+                 # Add some headroom above the max value
+                ax.tick_params(axis='both', which='major', labelsize=16)
+                
+                # Legend only on the first plot to avoid clutter
+                if i == 0 and row == 0:
+                    ax.legend(frameon=False, fontsize=16, loc='upper left')#
+            # set global y-limits based on max value across both conditions for this model
+            axs[0, i].set_ylim(0, max_val * 1.1)
+            axs[1, i].set_ylim(0, max_val * 1.1)
+
+        # Global X-label
+        fig.text(0.5, 0.01, 'Layer', ha='center', fontsize=16)
+        
+        plt.tight_layout(rect=[0, 0.03, 1, 0.95]) # Make room for global x-label
+        plt.savefig(f"plots/{data_type}.png", dpi=300)
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
 
@@ -216,6 +303,11 @@ if __name__ == "__main__":
     plot_left_right(args.model, args.image_path)
 
     generate_bar_graphs_all_models_ci("data_saves")
+
+    data_types = ["binary", "multary", "whatsup"]
+    for data_type in data_types:
+      generate_layerwise(data_type, "data_saves")
+
 
 
 
