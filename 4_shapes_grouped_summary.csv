@@ -1,7 +1,0 @@
-,Model,Question Group,Average Accuracy,Std Accuracy
-0,llava,positive,51.5,0.0
-1,llava,negative,52.0,0.0
-2,internvl,positive,86.0,0.0
-3,internvl,negative,80.0,0.0
-4,paligemma,positive,76.5,0.0
-5,paligemma,negative,54.5,0.0

@@ -1,6 +1,6 @@
 import matplotlib.pyplot as plt
 import numpy as np
-from functions import load_model
+from functions import load_model, mean_and_ci
 import torch
 import gc
 import multiprocessing as mp
@@ -21,10 +21,6 @@ def generate_bar_graphs_all_models_ci(save_dir):
     group_spacing = 0.2
     CI_Z = 1.96  # 95% confidence interval
 
-    def mean_and_ci(arr):
-        n = len(arr)
-        se = np.std(arr, ddof=1) / np.sqrt(n)
-        return arr.mean(), CI_Z * se
 
     fig, axes = plt.subplots(1, 3, figsize=(11, 3), dpi=120, sharey=False)
     fig.subplots_adjust(wspace=0.3)

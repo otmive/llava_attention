@@ -1,7 +1,7 @@
 import torch
 from transformers import AutoProcessor, AutoModelForImageTextToText
 from transformers import InternVLForConditionalGeneration, LlavaForConditionalGeneration
-
+import numpy as np
 
 
 def load_model(model_name):
@@ -50,3 +50,9 @@ def load_model(model_name):
 
 
     return processor, model
+
+def mean_and_ci(arr):
+  CI_Z = 1.96 # 95%
+  n = len(arr)
+  se = np.std(arr, ddof=1) / np.sqrt(n)
+  return arr.mean(), CI_Z * se

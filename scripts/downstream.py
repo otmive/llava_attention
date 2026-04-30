@@ -601,3 +601,5 @@ if __name__ == "__main__":
       run_whatsup_results()
       run_2_object_results()
       run_4_object_results()
+  elif args.function == "print":
+    print_breakdown()
