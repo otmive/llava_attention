@@ -113,6 +113,63 @@ def gen_4_data(model_name, image_dir, save_dir):
         torch.cuda.empty_cache()
     print(f"Finished data for {model_name}")
 
+def position_data(model_name, image_dir, save_dir):
+
+    processor, model = load_model(model_name)
+    count = 0
+    item1_attn = []
+    item2_attn = []
+    baseline_attentions = []
+    all_files = os.listdir(f"{image_dir}/images")
+    files_to_process = all_files[:10]
+
+    for pos in ["left", "right", "neg_left", "neg_right"]:
+      for filename in files_to_process:
+          image_path = f"{image_dir}/images/{filename}"
+          print(f"Processing image: {image_path}")
+
+          plotter = Plotter(image_path)
+          left_colour = plotter.get_left_shapes()[0].colour
+          right_colour = plotter.get_right_shapes()[0].colour
+          plotter.set_model(model, processor)
+
+          if pos == 'left' or pos == 'neg_left':
+              target_colour = left_colour
+          elif pos == 'right' or pos == 'neg_right':
+              target_colour = right_colour
+
+          if pos == 'left':
+              plotter.get_outputs(f"The object is a {left_colour}")
+          elif pos == 'right':
+              plotter.get_outputs(f"The object is a {right_colour}")
+          elif pos == 'neg_left':
+              plotter.get_outputs(f"The object is not a {left_colour}")
+          elif pos == 'neg_right':
+              plotter.get_outputs(f"The object is not a {right_colour}")
+
+          print("outputs:", plotter.print_output())
+          bbox_attentions, baseline_attn = plotter.plot_attention_through_layers()
+          item1_attn.append(bbox_attentions[left_colour])
+          item2_attn.append(bbox_attentions[right_colour])
+          baseline_attentions.append(baseline_attn)
+          count += 1
+
+      # plot average attention across items
+      avg_item1_attn = np.mean(np.array(item1_attn), axis=0)
+      avg_item2_attn = np.mean(np.array(item2_attn), axis=0)
+      avg_baseline_attn = np.mean(np.array(baseline_attentions), axis=0)
+      std_item1_attn = np.std(np.array(item1_attn), axis=0)
+      std_item2_attn = np.std(np.array(item2_attn), axis=0)
+
+      ci1 = 1.96*(std_item1_attn/np.sqrt(len(avg_item1_attn)))
+      ci2 = 1.96*(std_item2_attn/np.sqrt(len(avg_item2_attn)))
+
+
+      ## save the data
+      np.save(f"data_saves/{model_name}_{image_dir}_left_item_attn_{pos}.npy", item1_attn)
+      np.save(f"data_saves/{model_name}_{image_dir}_right_item_attn_{pos}.npy", item2_attn)
+
+
 if __name__ == "__main__":
   # use multiprocessing for grab data function
     model_names = ['llava', 'internvl', 'paligemma']
@@ -127,10 +184,14 @@ if __name__ == "__main__":
         default="binary", 
         help="Path to the folder containing images"
     )
+    parser.add_argument("--data_type", type=str,default="affneg", help="Type od data to generate, either afneg for main graph data or leftright for the position layerwise graph data")
     
     args = parser.parse_args()
 
-    target_func = gen_4_data if args.image_dir == "multary" else gen_2_data
+    if args.data_type == "leftright":
+      target_func = position_data
+    else:
+      target_func = gen_4_data if args.image_dir == "multary" else gen_2_data
 
     mp.set_start_method('spawn', force=True)
     # Use a context manager to handle the pool

@@ -283,30 +283,67 @@ def generate_layerwise(data_type, save_dir):
         plt.tight_layout(rect=[0, 0.03, 1, 0.95]) # Make room for global x-label
         plt.savefig(f"plots/{data_type}.png", dpi=300)
 
+def position_graphs(model_name, save_dir):
+    positions = ["left", "neg_left", "right", "neg_right"]
+    
+    title_map = {
+        "left": "Affirmative Left",
+        "right": "Affirmative Right",
+        "neg_left": "Negated Left",
+        "neg_right": "Negated Right"
+    }
+    # 3. Create the figure with 4 subplots
+    fig, axes = plt.subplots(1, 4, figsize=(16, 4), sharey=True)
+    fig.suptitle(f"{model_name.upper()}", fontsize=16, fontweight='bold')
+    
+    all_values = []
+    # load data from data_saves/left_right_data/
+    for i, pos in enumerate(positions):
+        item1_attn = np.load(f"{save_dir}/{model_name}_binary_left_item_attn_{pos}.npy")
+        item2_attn = np.load(f"{save_dir}/{model_name}_binary_right_item_attn_{pos}.npy")
+
+        avg_item1_attn = np.mean(item1_attn, axis=0)
+        avg_item2_attn = np.mean(item2_attn, axis=0)
+        ci1 = 1.96*(np.std(item1_attn, axis=0, ddof=1) / np.sqrt(len(item1_attn)))
+        ci2 = 1.96*(np.std(item2_attn, axis=0, ddof=1) / np.sqrt(len(item2_attn)))
+
+        all_values.extend(avg_item1_attn + ci1)
+        all_values.extend(avg_item2_attn + ci2)
+
+        x = list(range(len(avg_item1_attn)))
+        axes[i].plot(avg_item1_attn, label='Left Shape', linewidth=2, marker='o', markersize=3)
+        axes[i].plot(avg_item2_attn, label='Right Shape', linewidth=2, marker='x', markersize=3)    
+        axes[i].fill_between(x, avg_item1_attn - ci1, avg_item1_attn + ci1, alpha=0.25)
+        axes[i].fill_between(x, avg_item2_attn - ci2, avg_item2_attn + ci2, alpha=0.25) 
+        axes[i].set_title(f"{title_map.get(pos, pos)}", fontsize=14)
+        axes[i].set_xlabel("Layer", fontsize=16)
+        # make tick label font size bigger
+        axes[i].tick_params(axis='both', which='major', labelsize=16)
+        axes[i].set_ylim(0, max(all_values)*1.1)  # Apply the calculated max limit  
+        if i == 0:
+            axes[i].set_ylabel("Attention", fontsize=16)
+        if i == 3:
+            axes[i].legend(fontsize=16)
+        axes[i].grid(True, linestyle='--', alpha=0.4)   
+    plt.tight_layout(rect=[0, 0.03, 1, 0.95])
+    output_filename = f"plots/{model_name}_position_graphs.png"
+    plt.savefig(output_filename)
+    plt.close(fig)
+    print(f"Plot saved as {output_filename}")
+
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
 
-    parser.add_argument(
-        "--image_path", 
-        type=str, 
-        default="binary/images/image_0000.png", 
-        help="Image path to plot layer-wise attention for a single image"
-    )
-    parser.add_argument(
-        "--model", 
-        type=str, 
-        default="llava", 
-        help="Which model to plot for"
-    )
-
-    args = parser.parse_args()
-    plot_left_right(args.model, args.image_path)
+    #plot_left_right("llava", "binary/images/image_0000.png")
 
     generate_bar_graphs_all_models_ci("data_saves")
 
     data_types = ["binary", "multary", "whatsup"]
     for data_type in data_types:
       generate_layerwise(data_type, "data_saves")
+
+    models = ["llava", "internvl", "paligemma"]
+    for model in models:
+      position_graphs(model, "data_saves")
 
 
 
