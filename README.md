@@ -3,5 +3,5 @@
 
 Create environment
 ```
-conda env create -f envrironment.yml
+conda env create -f environment.yml
 ```
