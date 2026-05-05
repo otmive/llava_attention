@@ -614,6 +614,30 @@ class Plotter:
         bbox_tokens = (x2 - x1 + 1) * (y2 - y1 + 1)
         # plot attention heatmap but only for values within the bounding box
         return attn[y1:y2+1, x1:x2+1].sum().item()/bbox_tokens
+
+    def get_bbox_attention_for_layer_head(self, shape, layer_idx, head_idx):
+
+        attn = self.get_image_attention_matrix(layer_idx, head_idx)
+        # print(f"attention for layer {layer_idx}:", attn[0:5,0:5])
+        x1, y1, x2, y2 = shape.bbox
+        # scale bounding box to attention heatmap size
+        scale_x = attn.shape[1] / self.img.size[0]
+        scale_y = attn.shape[0] / self.img.size[1]
+
+        bbox_heatmap = [x1 * scale_x, y1 * scale_y, x2 * scale_x, y2 * scale_y]
+        x1, y1, x2, y2 = bbox_heatmap
+
+        x1, y1, x2, y2 = int(x1), int(y1), int(x2), int(y2)
+        
+        # print("original bbox:", shape.bbox)
+        # print("scaled bbox:", [x1, y1, x2, y2])
+        # print("attention map shape:", attn.shape)
+        # print("image shape:", self.img.size)
+        # calculate number of tokens in the bounding box
+
+        bbox_tokens = (x2 - x1 + 1) * (y2 - y1 + 1)
+        # plot attention heatmap but only for values within the bounding box
+        return attn[y1:y2+1, x1:x2+1].sum().item()/bbox_tokens
         
     def get_baseline_attn_for_layer(self, shapes, layer_idx):
         attn = self.get_image_attention_matrix(layer_idx)
@@ -725,7 +749,22 @@ class Plotter:
             plt.close()
 
         return bbox_attentions, baseline_attn
-    
+
+    def plot_headwise_attention(self):
+        num_layers = len(self.outputs["attentions"][0])
+        num_heads = len(self.outputs["attentions"][0][0][0])
+        print("Num layers ", num_layers)
+        print("Num heads ", num_heads)
+        bbox_attentions = {shape.colour: [] for shape in self.shapes}
+        for shape in self.shapes:
+            #print(f"Calculating attention for shape: {shape.shape} ({shape.colour})")
+            bbox_attentions[shape.colour] = [
+                                              [self.get_bbox_attention_for_layer_head(shape, layer_idx, head_idx) 
+                                              for head_idx in range(num_heads)]
+                                              for layer_idx in range(num_layers)
+                                          ]
+        return bbox_attentions
+
     def get_total_image_attention(self):
         attn = self.get_image_attention_matrix(None)
         return attn.sum().item()
