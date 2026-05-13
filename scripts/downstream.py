@@ -12,7 +12,7 @@ import random
 import pandas as pd
 
 
-
+seed_list = [0, 42, 100, 128, 200]
 # write a function which tests how well a model understands negation
 # we have images of two objects, firsly ask a positive question `Is the object on the left red?` and then a negative question `Is the object on the left not red?`
 # I want to print out the accuracy for each of the three models on the positive and negative questions, and also print out some examples of where the model got it wrong for each question type.
@@ -43,7 +43,7 @@ def get_2_object_accuracy(model_name, data_dir, seed, prompt_num=0):
 
     
     # load the data
-    for image_file in os.listdir(os.path.join(data_dir, "images"))[0:10]:
+    for image_file in os.listdir(os.path.join(data_dir, "images")):
         print("running for image ", image_file)
         image_path = os.path.join(data_dir, "images", image_file)
         print(f"Processing image: {image_path}")
@@ -77,6 +77,18 @@ def get_2_object_accuracy(model_name, data_dir, seed, prompt_num=0):
                 "positive_false": f"Does this statement match the image? The object on the {pos1} is {article}{col2}. Answer yes or no.",     # False: "Top left is Red"
                 "negative_false": f"Does this statement match the image? The object on the {pos1} is not {article}{col1}. Answer yes or no."  # False: "Top left is not Blue"
             },
+            "prompt_type_3": {
+                "positive": f"Is the object at the {pos1} position {article}{col1}? Answer yes or no.",           # True: "Top left is Blue"
+                "negative": f"Is the object at the {pos1} position not {article}{col2}? Answer yes or no.",       # True: "Top left is not Red"
+                "positive_false": f"Is the object at the {pos1} position {article}{col2}? Answer yes or no.",     # False: "Top left is Red"
+                "negative_false": f"Is the object at the {pos1} position not {article}{col1}? Answer yes or no."  # False: "Top left is not Blue"
+            },
+            "prompt_type_4": {
+                "positive": f"Is this true? The object at the {pos1} position is {article}{col1}? Answer yes or no.",           # True: "Top left is Blue"
+                "negative": f"Is this true? The object at the {pos1} position is not {article}{col2}? Answer yes or no.",       # True: "Top left is not Red"
+                "positive_false": f"Is this true? The object at the {pos1} position is {article}{col2}? Answer yes or no.",     # False: "Top left is Red"
+                "negative_false": f"Is this true? The object at the {pos1} position is not {article}{col1}? Answer yes or no."  # False: "Top left is not Blue"
+            },
         }
         
 
@@ -108,9 +120,9 @@ def run_2_object_results():
     # creaet dictionary for each seeded set of results
     all_results = {}
     mp.set_start_method('spawn', force=True)
-    for i in range(3): # run with the three different prompt types
+    for i in range(5): # run with the five different prompt types
         all_results[i] = {}
-        for seed in [0, 42, 100]:  # Run with different seeds for robustness
+        for seed in seed_list:  # Run with different seeds for robustness
             all_results[i][seed] = {} 
             print(f"\nRunning with seed: {seed}")
             for model_name in ["llava", "internvl", "paligemma"]:
@@ -141,9 +153,9 @@ def run_whatsup_results():
     # creaet dictionary for each seeded set of results
     all_results = {}
     mp.set_start_method('spawn', force=True)
-    for i in range(3): # run with the three different prompt types
+    for i in range(5): # run with the five different prompt types
         all_results[i] = {}
-        for seed in [0, 42, 100]:  # Run with different seeds for robustness
+        for seed in seed_list:  # Run with different seeds for robustness
             all_results[i][seed] = {} 
             print(f"\nRunning with seed: {seed}")
             for model_name in ["llava", "internvl", "paligemma"]:
@@ -188,7 +200,7 @@ def get_4_object_accuracy(model_name, data_dir, seed, prompt_num=0):
         "negative_false": False,
     }
     # load the data
-    for image_file in os.listdir(os.path.join(data_dir, "images"))[0:10]:
+    for image_file in os.listdir(os.path.join(data_dir, "images")):
         if image_file.endswith(".png"):
             image_path = os.path.join(data_dir, "images", image_file)
             print(f"Processing image: {image_path}")
@@ -213,10 +225,10 @@ def get_4_object_accuracy(model_name, data_dir, seed, prompt_num=0):
             # 3. Use a dictionary of templates to keep things organized
             templates = {
                 "prompt_type_0": {
-                    "positive": f"The object at the {pos1} is {col1}.",           # True: "Top left is Blue"
-                    "negative": f"The object at the {pos1} is not {col2}.",       # True: "Top left is not Red"
-                    "positive_false": f"The object at the {pos1} is {col2}.",     # False: "Top left is Red"
-                    "negative_false": f"The object at the {pos1} is not {col1}."  # False: "Top left is not Blue"
+                    "positive": f"Is this statement correct? The object at the {pos1} is {col1}.",           # True: "Top left is Blue"
+                    "negative": f"Is this statement correct? The object at the {pos1} is not {col2}.",       # True: "Top left is not Red"
+                    "positive_false": f"Is this statement correct? The object at the {pos1} is {col2}.",     # False: "Top left is Red"
+                    "negative_false": f"Is this statement correct? The object at the {pos1} is not {col1}."  # False: "Top left is not Blue"
                 },
                 "prompt_type_1": {
                     "positive": f"Is the object on the {pos1} {col1}? Answer yes or no.",           # True: "Top left is Blue"
@@ -229,7 +241,19 @@ def get_4_object_accuracy(model_name, data_dir, seed, prompt_num=0):
                     "negative": f"Is there a not {col2} object on the {pos1}? Answer yes or no.",       # True: "Top left is not Red"
                     "positive_false": f"Is there a {col2} object on the {pos1}? Answer yes or no.",     # False: "Top left is Red"
                     "negative_false": f"Is there a not {col1} object on the {pos1}? Answer yes or no."  # False: "Top left is not Blue"
-                }
+                },
+                "prompt_type_3": {
+                    "positive": f"Is the object at the {pos1} position {col1}? Answer yes or no.",           # True: "Top left is Blue"
+                    "negative": f"Is the object at the {pos1} position not {col2}? Answer yes or no.",       # True: "Top left is not Red"
+                    "positive_false": f"Is the object at the {pos1} position {col2}? Answer yes or no.",     # False: "Top left is Red"
+                    "negative_false": f"Is the object at the {pos1} position not {col1}? Answer yes or no."  # False: "Top left is not Blue"
+                },
+                "prompt_type_4": {
+                    "positive": f"Is this true? The object at the {pos1} position is {col1}? Answer yes or no.",           # True: "Top left is Blue"
+                    "negative": f"Is this true? The object at the {pos1} position is not {col2}? Answer yes or no.",       # True: "Top left is not Red"
+                    "positive_false": f"Is this true? The object at the {pos1} position is {col2}? Answer yes or no.",     # False: "Top left is Red"
+                    "negative_false": f"Is this true? The object at the {pos1} position is not {col1}? Answer yes or no."  # False: "Top left is not Blue"
+                },
             }
             # ask the model the positive question
             plotter.set_model(model, processor)
@@ -257,9 +281,9 @@ def run_4_object_results():
     # creaet dictionary for each seeded set of results
     all_results = {}
     mp.set_start_method('spawn', force=True)
-    for i in range(3): # run with the three different prompt types
+    for i in range(5): # run with the five different prompt types
         all_results[i] = {}
-        for seed in [0, 42, 100]:  # Run with different seeds for robustness
+        for seed in seed_list:  # Run with different seeds for robustness
             all_results[i][seed] = {} 
             print(f"\nRunning with seed: {seed}")
             for model_name in ["llava", "internvl", "paligemma"]:
@@ -298,7 +322,7 @@ def print_2_obj_results():
                 accuracies = []
                 pos_accuracies = []
                 neg_accuracies = []
-                for seed in [0, 42, 100]:
+                for seed in seed_list:
                     result = all_results[ptype][str(seed)][model][question_type]
                     accuracy = (result["correct"] / result["total"] * 100) if result["total"] > 0 else 0
                     print(f"  Prompt type {ptype} , model {model}, seed {seed}: {accuracy:.2f}%")
@@ -325,7 +349,7 @@ def print_whatsup_results():
             print(f"\nModel: {model}")
             for question_type in ["positive", "negative", "positive_false", "negative_false"]:
                 accuracies = []
-                for seed in [0, 42, 100]:
+                for seed in seed_list:
                     result = all_results[ptype][str(seed)][model][question_type]
                     accuracy = (result["correct"] / result["total"] * 100) if result["total"] > 0 else 0
                     print(f"  Prompt type {ptype} , model {model}, seed {seed}: {accuracy:.2f}%")
@@ -357,7 +381,7 @@ def print_results(results_type):
             neg_accuracies = []
             for question_type in ["positive", "negative", "positive_false", "negative_false"]:
                 accuracies = []
-                for seed in [0, 42, 100]:
+                for seed in seed_list:
                     result = all_results[ptype][str(seed)][model][question_type]
                     accuracy = (result["correct"] / result["total"] * 100) if result["total"] > 0 else 0
                     print(f"  Prompt type {ptype} , model {model}, seed {seed}: {accuracy:.2f}%")
@@ -393,7 +417,7 @@ def print_overall_pos_v_neg():
                 pos_accuracies = []
                 neg_accuracies = []
                 for question_type in ["positive", "negative", "positive_false", "negative_false"]:
-                    for seed in [0, 42, 100]:
+                    for seed in seed_list:
                         result = all_results[ptype][str(seed)][model][question_type]
                         accuracy = (result["correct"] / result["total"] * 100) if result["total"] > 0 else 0
                         if question_type in ["positive", "positive_false"]:
@@ -473,7 +497,7 @@ def print_breakdown():
                 prompt_type_results_neg = []
                 prompt_type_results_pos_false = []
                 prompt_type_results_neg_false = []
-                for seed in [0, 42, 100]:
+                for seed in seed_list:
                     result = results_loaded[ptype][str(seed)][model]
                     seed_level_accuracy_pos = []
                     seed_level_accuracy_neg = []
@@ -527,25 +551,25 @@ def print_breakdown():
 
                     #print("Model: ", model, ", Prompt type: ", ptype, ", seed: ", seed, ", positive accuracy: ", np.mean(seed_level_accuracy_pos), "std: ", np.std(seed_level_accuracy_pos), "negative accuracy: ", np.mean(seed_level_accuracy_neg), "std: ", np.std   (seed_level_accuracy_neg))
                     #print(f"Model: {model}, Prompt type: {ptype}, seed: {seed}, positive false accuracy: {np.mean(seed_level_accuracy_pos_false):.2f}% (±{np.std(seed_level_accuracy_pos_false):.2f}%)")
-                print("Prompt type: ", ptype, ", positive accuracy: ", np.mean(promt_type_results_pos), "std: ", np.std(promt_type_results_pos), "negative accuracy: ", np.mean(prompt_type_results_neg), "std: ", np.std(prompt_type_results_neg))
-                print("Prompt type: ", ptype, ", positive false accuracy: ", np.mean(prompt_type_results_pos_false), "std: ", np.std(prompt_type_results_pos_false), "negative false accuracy: ", np.mean(prompt_type_results_neg_false), "std: ", np.std(prompt_type_results_neg_false))
-            print(f"dataset{filename}, {model} positive accuracy: {np.mean(model_level_pos_accuracies):.2f}% (±{np.std(model_level_pos_accuracies):.2f}%)")
-            print(f"dataset{filename} {model} negative accuracy: {np.mean(model_level_neg_accuracies):.2f}% (±{np.std(model_level_neg_accuracies):.2f}%)")  
-            print(f"dataset{filename}, {model} positive false accuracy: {np.mean(model_level_pos_false_accuracies):.2f}% (±{np.std(model_level_pos_false_accuracies):.2f}%)")
-            print(f"dataset{filename} {model} negative false accuracy: {np.mean(model_level_neg_false_accuracies):.2f}% (±{np.std(model_level_neg_false_accuracies):.2f}%)")    
+                print("Prompt type: ", ptype, ", positive accuracy: ", np.mean(promt_type_results_pos), "std: ", np.std(promt_type_results_pos, ddof=1), "negative accuracy: ", np.mean(prompt_type_results_neg), "std: ", np.std(prompt_type_results_neg, ddof=1))
+                print("Prompt type: ", ptype, ", positive false accuracy: ", np.mean(prompt_type_results_pos_false), "std: ", np.std(prompt_type_results_pos_false, ddof=1), "negative false accuracy: ", np.mean(prompt_type_results_neg_false), "std: ", np.std(prompt_type_results_neg_false, ddof=1))
+            print(f"dataset{filename}, {model} positive accuracy: {np.mean(model_level_pos_accuracies):.2f}% (±{np.std(model_level_pos_accuracies, ddof=1):.2f}%)")
+            print(f"dataset{filename} {model} negative accuracy: {np.mean(model_level_neg_accuracies):.2f}% (±{np.std(model_level_neg_accuracies, ddof=1):.2f}%)")  
+            print(f"dataset{filename}, {model} positive false accuracy: {np.mean(model_level_pos_false_accuracies):.2f}% (±{np.std(model_level_pos_false_accuracies, ddof=1):.2f}%)")
+            print(f"dataset{filename} {model} negative false accuracy: {np.mean(model_level_neg_false_accuracies):.2f}% (±{np.std(model_level_neg_false_accuracies, ddof=1):.2f}%)")    
 
-    print("Llava overall positive accuracy: ", np.mean(llava_results_pos), "std: ", np.std(llava_results_pos))
-    print("Llava overall negative accuracy: ", np.mean(llava_results_neg), "std: ", np.std(llava_results_neg))
-    print("InternVL overall positive accuracy: ", np.mean(internvl_results_pos), "std: ", np.std(internvl_results_pos))
-    print("InternVL overall negative accuracy: ", np.mean(internvl_results_neg), "std: ", np.std(internvl_results_neg))
-    print("Paligemma overall positive accuracy: ", np.mean(paligemma_results_pos), "std: ", np.std(paligemma_results_pos))
-    print("Paligemma overall negative accuracy: ", np.mean(paligemma_results_neg), "std: ", np.std(paligemma_results_neg))
-    print("Llava overall positive false accuracy: ", np.mean(llava_results_pos_false), "std: ", np.std(llava_results_pos_false))
-    print("Llava overall negative false accuracy: ", np.mean(llava_results_neg_false), "std: ", np.std(llava_results_neg_false))
-    print("InternVL overall positive false accuracy: ", np.mean(internvl_results_pos_false), "std: ", np.std(internvl_results_pos_false))
-    print("InternVL overall negative false accuracy: ", np.mean(internvl_results_neg_false), "std: ", np.std(internvl_results_neg_false))
-    print("Paligemma overall positive false accuracy: ", np.mean(paligemma_results_pos_false), "std: ", np.std(paligemma_results_pos_false))
-    print("Paligemma overall negative false accuracy: ", np.mean(paligemma_results_neg_false), "std: ", np.std(paligemma_results_neg_false))
+    print("Llava overall positive accuracy: ", np.mean(llava_results_pos), "std: ", np.std(llava_results_pos, ddof=1))
+    print("Llava overall negative accuracy: ", np.mean(llava_results_neg), "std: ", np.std(llava_results_neg, ddof=1))
+    print("InternVL overall positive accuracy: ", np.mean(internvl_results_pos), "std: ", np.std(internvl_results_pos, ddof=1))
+    print("InternVL overall negative accuracy: ", np.mean(internvl_results_neg), "std: ", np.std(internvl_results_neg, ddof=1))
+    print("Paligemma overall positive accuracy: ", np.mean(paligemma_results_pos), "std: ", np.std(paligemma_results_pos, ddof=1))
+    print("Paligemma overall negative accuracy: ", np.mean(paligemma_results_neg), "std: ", np.std(paligemma_results_neg, ddof=1))
+    print("Llava overall positive false accuracy: ", np.mean(llava_results_pos_false), "std: ", np.std(llava_results_pos_false, ddof=1))
+    print("Llava overall negative false accuracy: ", np.mean(llava_results_neg_false), "std: ", np.std(llava_results_neg_false, ddof=1))
+    print("InternVL overall positive false accuracy: ", np.mean(internvl_results_pos_false), "std: ", np.std(internvl_results_pos_false, ddof=1))
+    print("InternVL overall negative false accuracy: ", np.mean(internvl_results_neg_false), "std: ", np.std(internvl_results_neg_false, ddof=1))
+    print("Paligemma overall positive false accuracy: ", np.mean(paligemma_results_pos_false), "std: ", np.std(paligemma_results_pos_false, ddof=1))
+    print("Paligemma overall negative false accuracy: ", np.mean(paligemma_results_neg_false), "std: ", np.std(paligemma_results_neg_false, ddof=1))
 
     print("=======================")
     print("Overall positive accuracy llava:", (np.mean(llava_results_pos)+np.mean(llava_results_pos_false))/2)
@@ -571,7 +595,7 @@ def print_dataset_results_breakdown():
             for ptype in sorted(results_loaded.keys()):
                 promt_type_results_pos = []
                 prompt_type_results_neg = []
-                for seed in [0, 42, 100]:
+                for seed in seed_list:
                     result = results_loaded[ptype][str(seed)][model]
                     seed_level_accuracy_pos = []
                     seed_level_accuracy_neg = []
