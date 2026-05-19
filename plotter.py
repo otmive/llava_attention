@@ -238,8 +238,6 @@ class Plotter:
         
 
         
-        # print model device
-        #print("Model device:", next(self.model.parameters()).device)
         if head_idx is None and layer_idx is None:
             self.outputs = self.model.generate(**self.inputs, max_new_tokens=1, do_sample=False, output_attentions=True, return_dict_in_generate=True, output_scores=True)
             first_token_logits = self.outputs.scores[0][0]
@@ -248,44 +246,45 @@ class Plotter:
             target_probability = probs[target_token_id].item()
             return target_probability
         else:
-            print(dir(self.model.model.language_model.layers[1]))
-            target_module = self.model.model.language_model.layers[layer_idx].self_attn.o_proj
-            num_heads = self.model.model.language_model.config.num_attention_heads
-            hidden_size = self.model.model.language_model.config.hidden_size
+            lang_model = self.model.model.language_model
+            attn_module = lang_model.layers[layer_idx].self_attn
+
+            num_heads = lang_model.config.num_attention_heads
+            hidden_size = lang_model.config.hidden_size
             head_dim = hidden_size // num_heads
-            print("num layres", len(self.model.model.language_model.layers))
-            print("num heads ", num_heads)
-            
-            def average_head_hook(module, input_args, output_tensor):
-              # Index slices for Head 1 (the 2nd head in the tensor)
-              start_idx = head_dim * head_idx
-              end_idx = head_dim * (head_idx + 1)
-              
-              # slice for relveant head
-              head_slice = output_tensor[..., start_idx:end_idx]
-              
-              # Calculate mean 
-              head_mean = head_slice.mean(dim=1, keepdim=True)
-              
-              # Overwrite with the baseline average vector
-              output_tensor[..., start_idx:end_idx] = head_mean
-              return output_tensor
 
-            hook_handle = target_module.register_forward_hook(average_head_hook)
+            def ablate_head_hook(module, input_args, output):
+                # attn_output: (batch, seq_len, hidden_size)
+                attn_output = output[0].clone()
 
-            self.outputs = self.outputs = self.model.generate(
-                                **self.inputs, 
-                                max_new_tokens=1, 
-                                do_sample=False, 
-                                return_dict_in_generate=True,
-                                output_scores=True,
-                            )
-            first_token_logits = self.outputs.scores[0][0]
-            probs = F.softmax(first_token_logits, dim=-1)
-            target_token_id = self.processor.tokenizer.encode(target_ans, add_special_tokens=False)[-1]
-            target_probability = probs[target_token_id].item()
-            hook_handle.remove()
-            return target_probability
+                start_idx = head_dim * head_idx
+                end_idx = head_dim * (head_idx + 1)
+
+                # Replace head slice with mean
+                head_slice = attn_output[:, :, start_idx:end_idx]          # (batch, seq, head_dim)
+                head_mean = head_slice.mean(dim=1, keepdim=True)            # (batch, 1,   head_dim)
+                attn_output[:, :, start_idx:end_idx] = head_mean
+
+
+                return (attn_output,) + output[1:]
+
+            hook_handle = attn_module.register_forward_hook(ablate_head_hook)
+
+            try:
+                outputs = self.model.generate(
+                    **self.inputs,
+                    max_new_tokens=1,
+                    do_sample=False,
+                    return_dict_in_generate=True,
+                    output_scores=True,
+                )
+                first_token_logits = outputs.scores[0][0]
+                probs = F.softmax(first_token_logits, dim=-1)
+                target_token_id = self.processor.tokenizer.encode(target_ans, add_special_tokens=False)[-1]
+                return probs[target_token_id].item()
+            finally:
+        
+                hook_handle.remove()
         
     def print_output(self):
         ## check model type
