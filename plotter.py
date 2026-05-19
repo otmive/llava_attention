@@ -5,6 +5,7 @@ from pathlib import Path
 import json
 import os 
 import matplotlib.pyplot as plt
+import torch.nn.functional as F
 
 def heterogenous_stack(vecs):
     '''Pad vectors with zeros then stack'''
@@ -179,7 +180,113 @@ class Plotter:
         self.outputs = self.model.generate(**self.inputs, max_new_tokens=1, do_sample=False, output_attentions=True, return_dict_in_generate=True)
         
         return self.outputs
-    
+
+    def get_outputs_prob(self, prompt, target_ans, layer_idx = None, head_idx = None):
+        #print("in get outputs")
+        image = Image.open(self.image).convert("RGB")
+        image = self.img
+        self.prompt = prompt
+
+        conversation = [
+            {
+                "role": "user",
+                "content": [
+                    {"type": "text", "text": self.prompt},
+                    {"type": "image"},
+                ],
+            },
+        ]
+
+        # check if model is internvl or llava
+        #print("checking which model")
+        if "InternVL" in self.model.config._name_or_path:
+            #print("using internvl processing")
+                
+            inputs = self.processor(
+                images=image,
+                text=f"<IMG_CONTEXT>\nUser: {self.prompt}\nAssistant:",
+                # truncation="only_second",
+                padding=True,
+                return_tensors='pt'
+            ).to(self.device, torch.float16)
+            self.inputs = {k: v.to(self.device) for k, v in inputs.items()}
+            #input_ids = self.inputs["input_ids"].to(self.device)
+            for k, v in inputs.items():
+                if torch.is_tensor(v):
+                    print(k, v.device)
+            self.inputs["pixel_values"] = self.inputs["pixel_values"].to(self.device)
+
+        elif "llava" in self.model.config._name_or_path:
+
+            #print("using llava processing")
+
+            prompt = self.processor.apply_chat_template(conversation, add_generation_prompt=True)
+            
+            # Process the image
+            processed = self.processor(images=image, text="", return_tensors="pt")
+            #print("Processed pixel_values shape:", processed["pixel_values"].shape)
+
+            inputs = self.processor(images=image, text=prompt, return_tensors='pt').to(self.device, torch.float16)
+            #print(len(inputs))
+            self.inputs = inputs
+
+        elif "paligemma" in self.model.config._name_or_path:
+            #print("using paligemma processing")
+
+
+            self.inputs = self.processor(text=prompt, images=image, return_tensors="pt").to(torch.bfloat16).to(self.device)
+        
+
+        
+        # print model device
+        #print("Model device:", next(self.model.parameters()).device)
+        if head_idx is None and layer_idx is None:
+            self.outputs = self.model.generate(**self.inputs, max_new_tokens=1, do_sample=False, output_attentions=True, return_dict_in_generate=True, output_scores=True)
+            first_token_logits = self.outputs.scores[0][0]
+            probs = F.softmax(first_token_logits, dim=-1)
+            target_token_id = self.processor.tokenizer.encode(target_ans, add_special_tokens=False)[-1]
+            target_probability = probs[target_token_id].item()
+            return target_probability
+        else:
+            print(dir(self.model.model.language_model.layers[1]))
+            target_module = self.model.model.language_model.layers[layer_idx].self_attn.o_proj
+            num_heads = self.model.model.language_model.config.num_attention_heads
+            hidden_size = self.model.model.language_model.config.hidden_size
+            head_dim = hidden_size // num_heads
+            print("num layres", len(self.model.model.language_model.layers))
+            print("num heads ", num_heads)
+            
+            def average_head_hook(module, input_args, output_tensor):
+              # Index slices for Head 1 (the 2nd head in the tensor)
+              start_idx = head_dim * head_idx
+              end_idx = head_dim * (head_idx + 1)
+              
+              # slice for relveant head
+              head_slice = output_tensor[..., start_idx:end_idx]
+              
+              # Calculate mean 
+              head_mean = head_slice.mean(dim=1, keepdim=True)
+              
+              # Overwrite with the baseline average vector
+              output_tensor[..., start_idx:end_idx] = head_mean
+              return output_tensor
+
+            hook_handle = target_module.register_forward_hook(average_head_hook)
+
+            self.outputs = self.outputs = self.model.generate(
+                                **self.inputs, 
+                                max_new_tokens=1, 
+                                do_sample=False, 
+                                return_dict_in_generate=True,
+                                output_scores=True,
+                            )
+            first_token_logits = self.outputs.scores[0][0]
+            probs = F.softmax(first_token_logits, dim=-1)
+            target_token_id = self.processor.tokenizer.encode(target_ans, add_special_tokens=False)[-1]
+            target_probability = probs[target_token_id].item()
+            hook_handle.remove()
+            return target_probability
+        
     def print_output(self):
         ## check model type
         if "InternVL" in self.model.config._name_or_path:

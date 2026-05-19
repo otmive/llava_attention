@@ -15,7 +15,7 @@ def gen_2_data(model_name, image_dir, save_dir):
     for neg in [False, True]:
         mentioned_attn = []
         non_mentioned_attn = []
-        for image_path in os.listdir(image_dir+"/images/")[0:10]:
+        for image_path in os.listdir(image_dir+"/images/")[0:20]:
             plotter = Plotter(f"{image_dir}/images/{image_path}")
             left_colour = plotter.get_left_shapes()[0].colour
             right_colour = plotter.get_right_shapes()[0].colour
@@ -63,7 +63,7 @@ def gen_4_data(model_name, image_dir, save_dir):
     for neg in [False, True]:
         mentioned_attn = []
         non_mentioned_attn = []
-        for image_path in os.listdir(image_dir+"/images/")[0:10]:
+        for image_path in os.listdir(image_dir+"/images/")[0:20]:
             plotter = Plotter(f"{image_dir}/images/{image_path}")
 
             for pos in ['top_left', 'top_right', 'bottom_left', 'bottom_right']:
@@ -173,7 +173,7 @@ def position_data(model_name, image_dir, save_dir):
 if __name__ == "__main__":
   # use multiprocessing for grab data function
     model_names = ['llava', 'internvl', 'paligemma']
-    save_dir = "data_saves"
+    save_dir = "two_tokens"
     parser = argparse.ArgumentParser(description="Generate data save files for all models")
     
     # Add the argument for image directory
