@@ -194,13 +194,40 @@ neg = np.load("negative_layers_binary.npy")
 pos_false = np.load("positive_false_layers_binary.npy")
 neg_false = np.load("negative_false_layers_binary.npy")
 
-pos_diffs = (neg + neg_false) / 2
-plt.figure(figsize=(10, 6))
-plt.bar(range(26), pos_diffs, color='steelblue')
-plt.title("Average Probability Difference by Layer", fontsize=20, pad=15)
-plt.xlabel("Layer", fontsize=20)
-plt.ylabel("Average Probability Difference", fontsize=20)
-plt.xticks(range(26), fontsize=14)
-plt.yticks(fontsize=14)
+pos_diffs = (pos + pos_false) / 2
+
+fig, ax = plt.subplots(figsize=(4, 3), dpi=300) 
+
+bar_color = '#2e6f77'
+text_color = '#2c3e50'  
+
+
+bars = ax.bar(range(26), pos_diffs, color=bar_color, width=0.7, edgecolor=bar_color, linewidth=0.2, zorder=3)
+
+
+ax.grid(True, axis='y', linestyle='--', alpha=0.4, color='#cccccc', zorder=0)
+ax.grid(False, axis='x') 
+
+for spine in ['top', 'right']:
+    ax.spines[spine].set_visible(False)
+    
+ax.spines['left'].set_color('#cccccc')
+ax.spines['bottom'].set_color('#cccccc')
+
+
+ax.set_title("Binary - Negated", fontsize=10, pad=8, fontweight='bold', color=text_color)
+ax.set_xlabel("Layer", fontsize=9, labelpad=4, color=text_color)
+ax.set_ylabel("Avg. Probability Difference", fontsize=9, labelpad=4, color=text_color)
+
+
+ax.set_xticks(range(0, 26, 5))
+ax.set_xticklabels(range(0, 26, 5), fontsize=8, color=text_color)
+ax.tick_params(axis='y', labelsize=8, colors=text_color)
+
+
+ax.set_xlim(-1, 26)
+
+
 plt.tight_layout()
-plt.savefig(f"neg_layers_tot.png")
+plt.savefig("pos_layers_tot.png", bbox_inches='tight', dpi=300)
+plt.show()
