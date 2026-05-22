@@ -253,22 +253,17 @@ class Plotter:
             hidden_size = lang_model.config.hidden_size
             head_dim = hidden_size // num_heads
 
-            def ablate_head_hook(module, input_args, output):
+            def ablate_hook(module, input_args, output):
                 # attn_output: (batch, seq_len, hidden_size)
                 attn_output = output[0].clone()
+                new_output = torch.zeros_like(attn_output)
 
-                start_idx = head_dim * head_idx
-                end_idx = head_dim * (head_idx + 1)
-
-                # Replace head slice with mean
-                head_slice = attn_output[:, :, start_idx:end_idx]          # (batch, seq, head_dim)
-                head_mean = head_slice.mean(dim=1, keepdim=True)            # (batch, 1,   head_dim)
-                attn_output[:, :, start_idx:end_idx] = head_mean
+                
 
 
-                return (attn_output,) + output[1:]
+                return (new_output,) + output[1:]
 
-            hook_handle = attn_module.register_forward_hook(ablate_head_hook)
+            hook_handle = attn_module.register_forward_hook(ablate_hook)
 
             try:
                 outputs = self.model.generate(
