@@ -11,7 +11,7 @@ import argparse
 
 def generate_bar_graphs_all_models_ci(save_dir):
 
-    model_names = ['paligemma', 'internvl', 'llava']
+    model_names = ['paligemma']
     dataset_types = ["binary", "multary", "whatsup"]
     dataset_labels = ["Bin.", "Mul.", "What's Up"]
     
@@ -42,23 +42,26 @@ def generate_bar_graphs_all_models_ci(save_dir):
                 nm_pos = np.mean(nm_pos, axis=(0, 1))
                 nm_neg = np.mean(nm_neg, axis=(0, 1))
 
-            means_cis = [mean_and_ci(arr.flatten()) for arr in [m_pos, m_neg, nm_pos, nm_neg]]
+
+            
+            means_cis = [mean_and_ci(arr.flatten()) for arr in [m_pos, nm_pos, m_neg, nm_neg]]
             vals  = [mc[0] for mc in means_cis]
             yerrs = [mc[1] for mc in means_cis]
-            
+            print(vals)
+            print("m_pos, nm_pos, m_neg, nm_neg")
             base_x = j * (4 * bar_width + group_spacing)
             center = base_x + (1.5 * bar_width)
             dataset_tick_positions.append(center)
 
             bar_configs = [
                 (0, color_mentioned,     1.0,  ''),
-                (1, color_mentioned,     0.7, '////'),
-                (2, color_non_mentioned, 1.0,  ''),
+                (1, color_non_mentioned,     0.7, ''),
+                (2, color_mentioned, 1.0,  '////'),
                 (3, color_non_mentioned, 0.7, '////'),
             ]
             labels = [
-                'Mentioned', 'Mentioned Negated',
-                'Alternative', 'Alternative Negated'
+                'Mentioned', 'Alternative',
+                'Mentioned Negated', 'Alternative Negated'
             ]
             for k, (offset, color, alpha, hatch) in enumerate(bar_configs):
                 ax.bar(
@@ -331,15 +334,15 @@ if __name__ == "__main__":
 
     #plot_left_right("llava", "binary/images/image_0000.png")
 
-    generate_bar_graphs_all_models_ci("data_saves")
+    generate_bar_graphs_all_models_ci("larger_saves")
 
-    data_types = ["binary", "multary", "whatsup"]
-    for data_type in data_types:
-      generate_layerwise(data_type, "data_saves")
+    # data_types = ["binary", "multary", "whatsup"]
+    # for data_type in data_types:
+    #   generate_layerwise(data_type, "data_saves")
 
-    models = ["llava", "internvl", "paligemma"]
-    for model in models:
-      position_graphs(model, "data_saves")
+    # models = ["llava", "internvl", "paligemma"]
+    # for model in models:
+    #   position_graphs(model, "data_saves")
 
 
 
